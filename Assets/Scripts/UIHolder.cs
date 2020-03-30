@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class UIHolder : MonoBehaviour
 {
-    //Before Fight UI
+    [Header("Set-up UI")]
     [SerializeField]
     GameObject _BFUI;
     [SerializeField]
@@ -16,7 +16,7 @@ public class UIHolder : MonoBehaviour
     int _gridX;
     int _gridY;
 
-    //After Fight UI
+    [Header("Fight UI")]
     [SerializeField]
     GameObject _AFUI;
     [SerializeField]
@@ -24,8 +24,21 @@ public class UIHolder : MonoBehaviour
     [SerializeField]
     Text _gridHistoryText;
     [SerializeField]
+    Text _characterInfoText;
+    [SerializeField]
     Text _numberOfActionsText;
     bool _fightStarted;
+
+    [Header("AutoFight Vars")]
+    [SerializeField]
+    Text _autoText;
+    [SerializeField]
+    float _autoSpeed = 1;
+    float _currtime;
+    float _starttime;
+
+    bool _autoFight;
+
 
     //Init
     private void Awake()
@@ -44,16 +57,50 @@ public class UIHolder : MonoBehaviour
     {
         if (_fightStarted)
         {
-            if (Input.GetKeyDown(KeyCode.RightArrow))
+            if(_autoFight)
             {
-                ChangeHistoryText(true);
+                _currtime = (Time.time - _starttime) / _autoSpeed;
+                if(_currtime > 1)
+                {
+                    HistoryHandler.AdvanceHistory();
+                    SetFightInfo();
+                    _starttime = Time.time;
+                    _currtime = 0;
+                }
             }
 
-            if (Input.GetKeyDown(KeyCode.LeftArrow))
+            if (Input.GetKeyDown(KeyCode.RightArrow))
             {
-                ChangeHistoryText(false);
+                ChangeFightHistory(true);
+            }
+            else if (Input.GetKeyDown(KeyCode.LeftArrow))
+            {
+                ChangeFightHistory(false);
             }
         }
+    }
+
+    public void AutoBattle()
+    {
+        if (_autoFight)
+        {
+            StopAuto();
+        }
+        else
+        {
+            _autoText.text = "On";
+
+            _currtime = 0;
+            _starttime = Time.time;
+
+            _autoFight = true;
+        }
+    }
+    
+    public void StopAuto()
+    {
+        _autoFight = false;
+        _autoText.text = "Off";
     }
 
     //Sets Text to Current Number of Enemies
@@ -65,7 +112,7 @@ public class UIHolder : MonoBehaviour
     //Called Whenever _numberOfEnemies needs to be changed
     public void SetNumberOfEnemiesText(bool positiveIncrement)
     {
-        if (positiveIncrement && _numberOfEnemies < 10)
+        if (positiveIncrement && _numberOfEnemies < (_gridX * _gridY))
         {
             _numberOfEnemies++;
         }
@@ -84,13 +131,18 @@ public class UIHolder : MonoBehaviour
 
     public void ChangeGridX(bool increase)
     {
-        if (increase && _gridX < 10)
+        if (increase)
         {
             _gridX++;
         }
-        else if(!increase && _gridX > 4)
+        else if(!increase && (_gridX * _gridY) > 2 && ((_gridX - 1) * _gridY) > 0)
         {
             _gridX--;
+            if(_numberOfEnemies > (_gridX * _gridY))
+            {
+                _numberOfEnemies = (_gridX * _gridY);
+                SetNumberOfEnemiesText();
+            }
         }
 
         SetGridSizeText();
@@ -98,13 +150,18 @@ public class UIHolder : MonoBehaviour
 
     public void ChangeGridY(bool increase)
     {
-        if (increase && _gridY < 10)
+        if (increase)
         {
             _gridY++;
         }
-        else if (!increase && _gridY > 4)
+        else if (!increase && (_gridX * _gridY) > 2 && (_gridX * (_gridY - 1)) > 0)
         {
             _gridY--;
+            if (_numberOfEnemies > (_gridX * _gridY))
+            {
+                _numberOfEnemies = (_gridX * _gridY);
+                SetNumberOfEnemiesText();
+            }
         }
 
         SetGridSizeText();
@@ -114,24 +171,30 @@ public class UIHolder : MonoBehaviour
     {
         _BFUI.SetActive(false);
         GridHandler.CreateNewGrid(_gridX, _gridY);
-        HistoryHandler.Init();
-        FightHandler.Init(_numberOfEnemies, this);
+        HistoryHandler.Init(this);
+        FightHandler.Init(_numberOfEnemies);
         _AFUI.SetActive(true);
 
-        SetHistoryText();
+        SetFightInfo();
         _fightStarted = true;
     }
 
-    void SetHistoryText()
+    public void SetFightInfo()
     {
         _historyText.text = HistoryHandler.GetCurrentHistory();
         _gridHistoryText.text = HistoryHandler.GetCurrentGridHistory();
+        _characterInfoText.text = HistoryHandler.GetCurrentCharacterInfo();
         _numberOfActionsText.text = HistoryHandler.GetCurrentActionNumber().ToString();
     }
 
-    public void ChangeHistoryText(bool goForwardinHistory)
+    public void ChangeFightHistory(bool goForwardinHistory)
     {
-        if(goForwardinHistory)
+        if (_autoFight)
+        {
+            StopAuto();
+        }
+
+        if (goForwardinHistory)
         {
             HistoryHandler.AdvanceHistory();
         }
@@ -140,6 +203,6 @@ public class UIHolder : MonoBehaviour
             HistoryHandler.ReverseHistory();
         }
 
-        SetHistoryText();
+        SetFightInfo();
     }
 }

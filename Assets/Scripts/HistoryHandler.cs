@@ -8,23 +8,31 @@ public static class HistoryHandler
     static Stack<string> _alteredHistory;
     static Stack<string> _gridhistory;
     static Stack<string> _alteredGridHistory;
+    static Stack<string> _characterInfo;
+    static Stack<string> _alteredCharacterInfo;
 
     static int _actionsTaken = 0;
     static string _actionSentence;
 
-    public static void Init()
+    static UIHolder _uiRef;
+
+    public static void Init(UIHolder reference)
     {
+        _uiRef = reference;
         _history = new Stack<string>();
         _alteredHistory = new Stack<string>();
         _gridhistory = new Stack<string>();
         _alteredGridHistory = new Stack<string>();
+        _characterInfo = new Stack<string>();
+        _alteredCharacterInfo = new Stack<string>();
         _actionSentence = "";
+
     }
 
     static public void DeclareDeath(Character deadCharacter)
     {
         AddToCurrentAction(" \n" + deadCharacter.Name + " has been slain!");
-        FightHandler.LastManStanding(deadCharacter);
+        FightHandler.LastManStanding();
     }
 
     //add a section of the current action to the action statment
@@ -33,30 +41,72 @@ public static class HistoryHandler
         _actionSentence += " " + addition;
     }
 
-    static public void SaveCurrentGridLayout(string gridlayout)
-    {
-        _gridhistory.Push(gridlayout);
-    }
-
     //add the current action to the history
     //then reset for next action
+    //Called if no Character has acted
     static public void FinalizeAction()
     {
         _actionsTaken++;
         GridHandler.FinalizeGridLayoutForTurn();
+        _characterInfo.Push("");
         _history.Push(_actionSentence);
         _actionSentence = " ";
     }
 
-    //Sends back currently view part of battle as string
+    //add the current grid layout, character stats, and action to the history
+    //then reset for next action
+    static public void FinalizeAction(Character characterThatActed)
+    {
+        _actionsTaken++;
+        GridHandler.FinalizeGridLayoutForTurn();
+        SaveCharacterInfo(characterThatActed);
+        _history.Push(_actionSentence);
+        _actionSentence = " ";
+    }
+
+    static public void SaveCurrentGridLayout(string gridlayout)
+    {
+        _gridhistory.Push(gridlayout);
+    }
+    
+    static void SaveCharacterInfo(Character chara)
+    {
+        string characterInfo = "" + chara.Name + "\n" + "\n"
+                            + "Health: " + chara.CurrHealth + "/" + chara.MaxHealth + "\n"
+                            + "Strength: " + chara.Strength + "\n"
+                            + "Accuracy: " + chara.Accuracy + "%\n"
+                            + "Critical Chance: " + chara.Crit + "%\n"
+                            + "Speed: " + chara.Speed + "\n"
+                            + "Movement: " + chara.Movement + "\n";
+
+        if(chara.LastAttacker != null)
+        {
+            characterInfo += "Current Target: " + chara.LastAttacker.Name + "\n";
+        }
+        else
+        {
+            characterInfo += "None" + "\n";
+        }
+        
+        _characterInfo.Push(characterInfo);
+    }
+
+    //Sends back current view of battle history as string
     static public string GetCurrentHistory()
     {
         return _history.Peek();
     }
 
+    //Sends back current view of Grid history as string
     static public string GetCurrentGridHistory()
     {
         return _gridhistory.Peek();
+    }
+
+    //Sends back current acting Character stats in history as string
+    static public string GetCurrentCharacterInfo()
+    {
+        return _characterInfo.Peek();
     }
 
     static public void SetToBeginning()
@@ -68,8 +118,10 @@ public static class HistoryHandler
                 _actionsTaken--;
                 _alteredHistory.Push(_history.Peek());
                 _alteredGridHistory.Push(_gridhistory.Peek());
+                _alteredCharacterInfo.Push(_characterInfo.Peek());
                 _history.Pop();
                 _gridhistory.Pop();
+                _characterInfo.Pop();
             } 
         }
         catch
@@ -88,8 +140,10 @@ public static class HistoryHandler
             _actionsTaken--;
             _alteredHistory.Push(_history.Peek());
             _alteredGridHistory.Push(_gridhistory.Peek());
+            _alteredCharacterInfo.Push(_characterInfo.Peek());
             _history.Pop();
             _gridhistory.Pop();
+            _characterInfo.Pop();
         }
     }
 
@@ -102,14 +156,20 @@ public static class HistoryHandler
             _actionsTaken++;
             _history.Push(_alteredHistory.Peek());
             _gridhistory.Push(_alteredGridHistory.Peek());
+            _characterInfo.Push(_alteredCharacterInfo.Peek());
             _alteredHistory.Pop();
             _alteredGridHistory.Pop();
+            _alteredCharacterInfo.Pop();
         }
         else
         {
             if(!FightHandler.LastManStanding())
             {
                 FightHandler.ContinueFight();
+            }
+            else
+            {
+                _uiRef.StopAuto();
             }
         }
     }

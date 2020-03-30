@@ -133,11 +133,22 @@ public static class GridHandler
 
     public static void MoveEnemy(Character movingCharacter, Vector2 desiredPos)
     {
-        HistoryHandler.AddToCurrentAction(movingCharacter.Name + " MOVES \n");
-        ClearSpace(movingCharacter.CurrentPosition);
+        if(movingCharacter.CurrentPosition != desiredPos)
+        {
+            HistoryHandler.AddToCurrentAction(movingCharacter.Name + " MOVES \n");
+            ClearSpace(movingCharacter.CurrentPosition);
 
-        movingCharacter.CurrentPosition = desiredPos;
-        _battleGrid[(int)desiredPos.x, (int)desiredPos.y] = movingCharacter;
+            movingCharacter.CurrentPosition = desiredPos;
+            _battleGrid[(int)desiredPos.x, (int)desiredPos.y] = movingCharacter;
+        }
+        else if(movingCharacter.SpacesICanMove.Count == 1)
+        {
+            HistoryHandler.AddToCurrentAction(movingCharacter.Name + " CAN'T MOVE \n");
+        }
+        else
+        {
+            HistoryHandler.AddToCurrentAction(movingCharacter.Name + " STANDS IN PLACE \n");
+        }
     }
 
     //checks to see if the space is generically occupied

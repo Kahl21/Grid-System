@@ -10,8 +10,9 @@ public class Character
     public string Name { get { return _myName; } }
 
     int _myHealth;
-    public int Health { get { return _myHealth; } set { _myHealth = value; } }
-
+    int _myMaxHealth;
+    public int CurrHealth { get { return _myHealth; } set { _myHealth = value; } }
+    public int MaxHealth { get { return _myMaxHealth; } }
     int _myStrength;
     public int Strength { get { return _myStrength; } }
 
@@ -20,6 +21,9 @@ public class Character
 
     int _myCritChance;
     public int Crit { get { return _myCritChance; } }
+
+    int _mySpeed;
+    public int Speed { get { return _mySpeed; } }
 
     int _myMovement;
     public int Movement { get { return _myMovement; } }
@@ -34,15 +38,20 @@ public class Character
     public Vector2 CurrentPosition { get { return _gridPos; } set { _gridPos = value; } }
 
     List<Vector2> _myMoves;
+    public List<Vector2> SpacesICanMove { get { return _myMoves; } }
+
     Character _lastToHitMe;
-    public Character LastAttacker { get { return _lastToHitMe; } }
+    public Character LastAttacker { get { return _lastToHitMe; } set { _lastToHitMe = value; } }
+
     public Character()
     {
         _myName = "Bert";
         _myHealth = 100;
+        _myMaxHealth = 100;
         _myStrength = 10;
         _myAccuracy = 75;
         _myCritChance = 25;
+        _mySpeed = 10;
         _myMovement = 2;
         _gridPos = Vector2.zero;
         _stratRef = new CharacterStrategy();
@@ -54,23 +63,27 @@ public class Character
         _myName = name + tileMoniker;
         _myTileInfo = tileMoniker;
         _myHealth = Random.Range(50, 201);
+        _myMaxHealth = _myHealth;
         _myStrength = Random.Range(5, 20);
         _myAccuracy = Random.Range(10, 101);
         _myCritChance = Random.Range(10, 101);
+        _mySpeed = Random.Range(1, 101);
         _myMovement = Random.Range(1, 3);
         _gridPos = startPos;
         _stratRef = new CharacterStrategy();
         _dead = false;
     }
 
-    public Character(string name, string tileMoniker, int hp, int att, int acc, int crit, int move, Vector2 startPos)
+    public Character(string name, string tileMoniker, int hp, int att, int acc, int speed, int crit, int move, Vector2 startPos)
     {
         _myName = name + tileMoniker;
         _myTileInfo = tileMoniker;
         _myHealth = hp;
+        _myMaxHealth = hp;
         _myStrength = att;
         _myAccuracy = acc;
         _myCritChance = crit;
+        _mySpeed = speed;
         _myMovement = move;
         _gridPos = startPos;
         _stratRef = new CharacterStrategy();
@@ -95,6 +108,7 @@ public class Character
 
     public void Move(Character target)
     {
+        LastAttacker = target;
         Vector2 movingTo = CurrentPosition;
 
         for (int i = 0; i < _myMoves.Count; i++)
@@ -150,6 +164,10 @@ public class Character
         {
             FightHandler.AttackEnemy(this, currTarget);
         }
+        else
+        {
+            Attack();
+        }
     }
 
     public void RunAway()
@@ -177,9 +195,8 @@ public class Character
         Move();
     }
 
-    public void TakeDamage(Character attacker, int damage)
+    public void TakeDamage(int damage)
     {
-        _lastToHitMe = attacker;
         _myHealth -= damage;
         if(_myHealth < 0)
         {
@@ -187,6 +204,4 @@ public class Character
             _dead = true;
         }
     }
-
-    
 }

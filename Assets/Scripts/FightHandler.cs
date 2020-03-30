@@ -9,9 +9,6 @@ public static class FightHandler
     static int _currentEnemyNum;
 
     static List<Character> _spawnedEnemies;
-    static List<Character> GetEnemyList { get { return _spawnedEnemies; } }
-
-    static UIHolder _uiRef;
 
     //Base Constructor
     public static void Init()
@@ -23,11 +20,10 @@ public static class FightHandler
     }
 
     //Constructor if UI is used
-    public static void Init(int numberOfEnemies, UIHolder uiReference)
+    public static void Init(int numberOfEnemies)
     {
         _currentEnemyNum = 0;
         _enemiesToMake = numberOfEnemies;
-        _uiRef = uiReference;
         _spawnedEnemies = new List<Character>();
         CreateEnemies();
         HistoryHandler.AddToCurrentAction("Battle Start!");
@@ -50,12 +46,11 @@ public static class FightHandler
     //does not end until 1 enemy is left
     public static void ContinueFight()
     {
-        if(!LastManStanding())
-        {
             if(_currentEnemyNum < _spawnedEnemies.Count)
             {
                 _spawnedEnemies[_currentEnemyNum].TakeAction();
-                HistoryHandler.FinalizeAction();
+                HistoryHandler.FinalizeAction(_spawnedEnemies[_currentEnemyNum]);
+                
                 _currentEnemyNum++;
             }
             else
@@ -63,12 +58,6 @@ public static class FightHandler
                 _currentEnemyNum = 0;
                 ContinueFight();
             }
-        }
-        else
-        {
-            HistoryHandler.AddToCurrentAction(_spawnedEnemies[0].Name + " WINS");
-            HistoryHandler.FinalizeAction();
-        }
     }
 
     static public bool LastManStanding()
@@ -80,8 +69,11 @@ public static class FightHandler
             {
                 GridHandler.ClearSpace(check.CurrentPosition);
                 _spawnedEnemies.Remove(check);
-                i--;
-                _currentEnemyNum--;
+                if (_currentEnemyNum >= i)
+                {
+                    i--;
+                    _currentEnemyNum--;
+                }
             }
         }
 
@@ -97,12 +89,12 @@ public static class FightHandler
         }
     }
 
-    static public void LastManStanding(Character DeadFighter)
+/*    static public void LastManStanding(Character DeadFighter)
     {
         GridHandler.ClearSpace(DeadFighter.CurrentPosition);
         _spawnedEnemies.Remove(DeadFighter);
         _currentEnemyNum--;
-    }
+    }*/
 
     static public Character FindRandomEnemy(Character me)
     {
@@ -139,12 +131,14 @@ public static class FightHandler
             if (attacker.Crit > randNum)
             {
                 HistoryHandler.AddToCurrentAction("and CRITS for " + (attacker.Strength * 2).ToString());
-                target.TakeDamage(attacker, attacker.Strength * 2);
+                target.TakeDamage(attacker.Strength * 2);
+                target.LastAttacker = attacker;
             }
             else
             {
                 HistoryHandler.AddToCurrentAction("and HITS for " + (attacker.Strength).ToString());
-                target.TakeDamage(attacker, attacker.Strength);
+                target.TakeDamage(attacker.Strength);
+                target.LastAttacker = attacker;
             }
         }
         else
