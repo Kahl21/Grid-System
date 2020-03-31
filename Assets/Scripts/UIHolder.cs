@@ -9,7 +9,7 @@ public class UIHolder : MonoBehaviour
     [SerializeField]
     GameObject _BFUI;
     [SerializeField]
-    Text _numberOfEnemiesText;
+    InputField _numberOfEnemiesText;
     int _numberOfEnemies;
     [SerializeField]
     Text _gridSizeText;
@@ -27,13 +27,16 @@ public class UIHolder : MonoBehaviour
     Text _characterInfoText;
     [SerializeField]
     Text _numberOfActionsText;
+    [SerializeField]
+    Slider _autoSpeedSlider;
     bool _fightStarted;
 
     [Header("AutoFight Vars")]
     [SerializeField]
     Text _autoText;
-    [SerializeField]
     float _autoSpeed = 1;
+    public float AutoSpeed { get { return _autoSpeed; } set { _autoSpeed = value; } }
+
     float _currtime;
     float _starttime;
 
@@ -43,6 +46,7 @@ public class UIHolder : MonoBehaviour
     //Init
     private void Awake()
     {
+        SpellBook.LoadSpellBook();
         _fightStarted = false;
         _BFUI.SetActive(true);
         _AFUI.SetActive(false);
@@ -59,7 +63,7 @@ public class UIHolder : MonoBehaviour
         {
             if(_autoFight)
             {
-                _currtime = (Time.time - _starttime) / _autoSpeed;
+                _currtime = (Time.time - _starttime) * _autoSpeed;
                 if(_currtime > 1)
                 {
                     HistoryHandler.AdvanceHistory();
@@ -96,6 +100,11 @@ public class UIHolder : MonoBehaviour
             _autoFight = true;
         }
     }
+
+    public void AdjustAutoSpeed()
+    {
+        _autoSpeed = _autoSpeedSlider.value;
+    }
     
     public void StopAuto()
     {
@@ -122,6 +131,30 @@ public class UIHolder : MonoBehaviour
         }
 
         SetNumberOfEnemiesText();
+    }
+
+    public void CheckNumberOfEnemies()
+    {
+        try
+        {
+            int temp = System.Convert.ToInt32(_numberOfEnemiesText.text);
+
+            if(temp > _gridX * _gridY)
+            {
+                _numberOfEnemies = _gridX * _gridY;
+                SetNumberOfEnemiesText();
+            }
+            else
+            {
+                _numberOfEnemies = temp;
+                SetNumberOfEnemiesText();
+            }
+        }
+        catch
+        {
+            _numberOfEnemies = 2;
+            SetNumberOfEnemiesText();
+        }        
     }
 
     void SetGridSizeText()
