@@ -31,8 +31,7 @@ public static class HistoryHandler
 
     static public void DeclareDeath(Character deadCharacter)
     {
-        AddToCurrentAction(" \n" + deadCharacter.Name + " has been slain!");
-        FightHandler.LastManStanding();
+        AddToCurrentAction(" \n" + deadCharacter.Name + " has been slain!\n");
     }
 
     //add a section of the current action to the action statment
@@ -71,27 +70,41 @@ public static class HistoryHandler
     
     static void SaveCharacterInfo(Character chara)
     {
-        string characterInfo = "" + chara.Name + "\n"
-                            + "Weapon: " + chara.HeldWeapon.Name + " --> " + chara.HeldWeapon.WeaponElement + "\n\n"
-                            + "Health: " + chara.CurrHealth + "/" + chara.MaxHealth + "\n"
-                            + "Strength: " + (chara.Offense.Strength + chara.HeldWeapon.StrengthMod) + " (" + chara.HeldWeapon.StrengthMod + ")" + "\n"
-                            + "Magic: " + (chara.Offense.Strength + chara.HeldWeapon.MagicMod) + "(" + chara.HeldWeapon.MagicMod + ")" + "\n"
-                            + "Defense: " + chara.Defense.BaseDefense + "\n"
-                            + "Accuracy: " + (chara.Offense.Accuracy + chara.HeldWeapon.Accuracy) + "%" + " (" + chara.HeldWeapon.Accuracy + ")" + "\n"
-                            + "Critical Chance: " + (chara.Offense.CriticalChance + chara.HeldWeapon.Crit) + "%" + " (" + chara.HeldWeapon.Crit + ")" + "\n"
-                            + "Speed: " + chara.Speed + "\n"
-                            + "Movement: " + chara.Movement + "\n\n"
-                            + "Resistances: Fire/" + chara.Defense.FireRes + "    Ice/" + chara.Defense.IceRes + "\n"
-                            + "             Thunder/" + chara.Defense.ThunderRes + "  Dark/" + chara.Defense.DarkRes + "\n";
+        string characterInfo = "Team " + chara.Team + "\n";
+        characterInfo += chara.Name + "\n"
+                        + "Weapon: " + chara.HeldWeapon.Name + " --> " + chara.HeldWeapon.WeaponElement + "\n\n"
+                        + "Health: " + chara.CurrHealth + "/" + chara.MaxHealth + "\n"
+                        + "Mana: " + chara.CurrMana + "/" + chara.MaxMana + "\n"
+                        + "Strength: " + (chara.Offense.Strength + chara.HeldWeapon.StrengthMod) + " (" + chara.HeldWeapon.StrengthMod + ")" + "\n"
+                        + "Magic: " + (chara.Offense.Strength + chara.HeldWeapon.MagicMod) + "(" + chara.HeldWeapon.MagicMod + ")" + "\n"
+                        + "Defense: " + chara.Defense.BaseDefense + "\n"
+                        + "Accuracy: " + (chara.Offense.Accuracy + chara.HeldWeapon.Accuracy) + "%" + " (" + chara.HeldWeapon.Accuracy + ")" + "\n"
+                        + "Critical Chance: " + (chara.Offense.CriticalChance + chara.HeldWeapon.Crit) + "%" + " (" + chara.HeldWeapon.Crit + ")" + "\n"
+                        + "Speed: " + chara.Speed + "\n"
+                        + "Movement: " + chara.Movement + "\n\n"
+                        + "Resistances: Fire/" + chara.Defense.FireRes + "\n"
+                        + "             Ice/" + chara.Defense.IceRes + "\n"
+                        + "             Thunder/" + chara.Defense.ThunderRes + "\n"
+                        + "             Light/" + chara.Defense.LightRes + "\n"
+                        + "             Dark/" + chara.Defense.DarkRes + "\n\n"
+                        + "Skills: \n" ;
 
+        for (int i = 0; i < chara.Abilities.Count; i++)
+        {
+            characterInfo += "        " + chara.Abilities[i].Name + "\n";
+        }
+
+        characterInfo += "Current Target: ";
         if (chara.LastAttacker != null)
         {
-            characterInfo += "Current Target: " + chara.LastAttacker.Name + "\n";
+            characterInfo += chara.LastAttacker.Name + "\n";
         }
         else
         {
             characterInfo += "None" + "\n";
         }
+
+        characterInfo += "Position In Grid: " + chara.CurrentPosition;
         
         _characterInfo.Push(characterInfo);
     }
@@ -174,6 +187,8 @@ public static class HistoryHandler
             }
             else
             {
+                AddToCurrentAction("Team " + FightHandler.GetEnemies[0].Team + " WINS!!!");
+                FinalizeAction(FightHandler.GetEnemies[0]);
                 _uiRef.StopAuto();
             }
         }

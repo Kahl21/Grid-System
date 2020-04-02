@@ -6,17 +6,30 @@ using UnityEngine;
 public class Character
 {
     CharacterStrategy _stratRef;
-    
+
+    int _myTeamNumber;
+    public int Team { get { return _myTeamNumber; } }
+
+
     string _myName;
     public string Name { get { return _myName; } }
 
     Weapon _myWeapon;
     public Weapon HeldWeapon { get { return _myWeapon; } }
+    
+    List<Ability> _myAbilites;
+    public List<Ability> Abilities { get { return _myAbilites; } set { _myAbilites = value; } }
 
     int _myHealth;
     int _myMaxHealth;
     public int CurrHealth { get { return _myHealth; } set { _myHealth = value; } }
     public int MaxHealth { get { return _myMaxHealth; } }
+
+    int _myMana;
+    int _myMaxMana;
+
+    public int CurrMana { get { return _myMana; } set { _myMana = value; } }
+    public int MaxMana { get { return _myMaxMana; } }
 
     DefenseStats _myDefenses;
     public DefenseStats Defense { get { return _myDefenses; } }
@@ -45,11 +58,15 @@ public class Character
     Character _lastToHitMe;
     public Character LastAttacker { get { return _lastToHitMe; } set { _lastToHitMe = value; } }
 
+    //base constructor
     public Character()
     {
         _myName = "Bert";
         _myHealth = 100;
-        _myMaxHealth = 100;
+        _myMaxHealth = 100; 
+        
+        _myMana = 100;
+        _myMaxMana = 100;
 
         _myOffense = new AttackStats(10, 10, 75, 25);
         _myDefenses = new DefenseStats(10, 0, 0, 0, 0, 0);
@@ -63,12 +80,16 @@ public class Character
         _dead = false;
     }
 
-    public Character(string name, string tileMoniker, Vector2 startPos)
+    //randomized constructor
+    public Character(string name, string tileMoniker, int teamNumber, Vector2 startPos)
     {
+        _myTeamNumber = teamNumber;
         _myName = name + tileMoniker;
         _myTileInfo = tileMoniker;
         _myHealth = Random.Range(50, 201);
-        _myMaxHealth = _myHealth;
+        _myMaxHealth = _myHealth; 
+        _myMana = 100;
+        _myMaxMana = 100;
 
         int _myStrength = Random.Range(5, 20);
         int _myMagic = Random.Range(5, 20);
@@ -112,16 +133,20 @@ public class Character
         _mySpeed = Random.Range(1, 101);
         _myMovement = Random.Range(1, 3);
         _gridPos = startPos;
-        _stratRef = new CharacterStrategy();
+        _stratRef = new CharacterStrategy(this);
         _dead = false;
     }
 
-    public Character(string name, string tileMoniker, int hp, int att, int mag, int acc, int crit, int baseDef, int fireRes, int iceRes, int thunRes, int lightRes, int darkRes,  int speed,  int move, Weapons weapon, Vector2 startPos)
+    //incredibly specific constructor
+    public Character(string name, string tileMoniker, int teamNumber, int hp, int mp, int att, int mag, int acc, int crit, int baseDef, int fireRes, int iceRes, int thunRes, int lightRes, int darkRes,  int speed,  int move, Weapons weapon, Vector2 startPos)
     {
+        _myTeamNumber = teamNumber;
         _myName = name + tileMoniker;
         _myTileInfo = tileMoniker;
         _myHealth = hp;
         _myMaxHealth = hp;
+        _myMana = mp;
+        _myMaxMana = mp;
 
         _myOffense = new AttackStats(att, mag, acc, crit);
         _myDefenses = new DefenseStats(baseDef, fireRes, iceRes, thunRes, lightRes, darkRes);
@@ -153,28 +178,35 @@ public class Character
         _mySpeed = speed;
         _myMovement = move;
         _gridPos = startPos;
-        _stratRef = new CharacterStrategy();
+        _stratRef = new CharacterStrategy(this);
         _dead = false;
     }
 
+    //Main method called
+    //starts this units turn
     public void TakeAction()
     {
         if(!_dead)
         {
-            _myMoves = GridHandler.WhereCanIMove(_gridPos, _myMovement);
-            _stratRef.WhatDo(this);
+            _stratRef.WhatDo();
             //Debug.Log("Action Taken");
         }
     }
 
+    //Moves unit randomly to any space it can travel
     public void Move()
     {
+        _myMoves = GridHandler.WhereCanIMove(_gridPos, _myMovement);
         int randNum = Random.Range(0, _myMoves.Count);
         GridHandler.MoveEnemy(this, _myMoves[randNum]);
     }
 
+    //Moves towards the targeted Unit
+    //Uses Dijstrka to find its path (not implemented)
+    //follows path for as long as it has movement
     public void Move(Character target)
     {
+        _myMoves = GridHandler.WhereCanIMove(_gridPos, _myMovement);
         LastAttacker = target;
         Vector2 movingTo = CurrentPosition;
 
@@ -214,14 +246,17 @@ public class Character
         GridHandler.MoveEnemy(this, movingTo);
     }
 
+    //checks for enemies nearby and attacks
+    //indiscriminately
     public void Attack()
     {
-        if (GridHandler.CheckForEnemyWithinRange(_gridPos, _myWeapon))
+        if (GridHandler.CheckForEnemyWithinRange(_gridPos, _myWeapon, _myTeamNumber))
         {
-            List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, _myWeapon);
+            List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, _myWeapon, _myTeamNumber);
             if(_enemiesNearMe.Count > 0)
             {
                 int randNum = Random.Range(0, _enemiesNearMe.Count);
+
                 FightHandler.AttackEnemy(this, _enemiesNearMe[randNum]);
             }
             else
@@ -231,9 +266,11 @@ public class Character
         }
     }
 
+    //attacks target if it is in range
+    //if calls base attack method
     public void Attack(Character currTarget)
     {
-        if (GridHandler.CheckForEnemyWithinRange(_gridPos, _myWeapon, currTarget))
+        if (GridHandler.CheckForEnemyWithinRange(_gridPos, _myWeapon, _myTeamNumber, currTarget))
         {
             FightHandler.AttackEnemy(this, currTarget);
         }
@@ -243,23 +280,60 @@ public class Character
         }
     }
 
-    public void UseSkill(Abilities currSkill, Character currTarget)
-    { 
-        if (GridHandler.CheckForEnemyWithinRange(_gridPos, currSkill, currTarget))
+    //Use Skill passed to it
+    //gets all enemies near and blindly choose one to hit
+    //regardless of Spell Shape
+    public void UseSkill(Ability currSkill)
+    {
+        List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, currSkill, _myTeamNumber); 
+        int rand = Random.Range(0, _enemiesNearMe.Count);
+        if(_enemiesNearMe.Count > 0)
         {
-            List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, currSkill);
+            _enemiesNearMe = GridHandler.GetTargetsInSplashZone(_enemiesNearMe[rand].CurrentPosition, _gridPos, currSkill);
+
             currSkill.ActivateSkill(this, _enemiesNearMe);
         }
-        else
+
+    }
+
+    //Use Skill passed to it
+    //gets the enemy that is being targeted
+    //checks the splash zone for collatoral
+    public void UseSkill(Ability currSkill, Character currTarget)
+    {
+        List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, currSkill, _myTeamNumber, currTarget);
+
+        //Debug.Log("using " + currSkill.Name);
+        if(_enemiesNearMe.Count > 0)
         {
-            return;
+            _enemiesNearMe = GridHandler.GetTargetsInSplashZone(_enemiesNearMe[0].CurrentPosition, _gridPos, currSkill);
+
+            currSkill.ActivateSkill(this, _enemiesNearMe);
         }
     }
 
-    public void TakeDamage(int damage, DamageType element)
+    //Use heal Skill passed to it
+    //gets al enemies near and blindly choose one to hit
+    public void UseHeal(Ability currSkill)
     {
-        int damageTaken = _myDefenses.CalculateDamage(damage, element);
-        _myHealth -= damageTaken;
+        List<Character> _enemiesNearMe = new List<Character>();
+        _enemiesNearMe.Add(this);
+        currSkill.ActivateSkill(this, _enemiesNearMe);
+    }
+
+    //Use Heal Skill passed to it
+    //gets all Allies nearby and chooses one with the least health
+    public void UseHeal(Ability currSkill, Character currTarget)
+    {
+        //List<Character> _enemiesNearMe = GridHandler.GetAlliesinRange(_gridPos, currSkill);
+        //currSkill.ActivateSkill(this, _enemiesNearMe, currTarget);
+    }
+
+
+    public void TakeDamage(int damage, DamageType element, bool crit)
+    {
+        int damageTaken = _myDefenses.CalculateDamage(damage, element, crit);
+        _myHealth += damageTaken;
 
         if(_myHealth < 0)
         {
@@ -304,7 +378,7 @@ public struct DefenseStats
         DarkRes = darkRes;
     }
 
-    public int CalculateDamage(int damage, DamageType damageType)
+    public int CalculateDamage(int damage, DamageType damageType, bool crit)
     {
         int actualDamage = 0;
 
@@ -340,6 +414,13 @@ public struct DefenseStats
             actualDamage = 0;
         }
 
-        return Mathf.Abs(actualDamage);
+        if(crit)
+        {
+            actualDamage *= 2;
+        }
+
+        //Debug.Log(actualDamage);
+
+        return actualDamage;
     }
 }

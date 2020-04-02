@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Magic : Abilities
+public class Magic : Ability
 {
     public Magic() : base ()
     {
@@ -20,9 +20,10 @@ public class Magic : Abilities
         for (int i = 0; i < targets.Count; i++)
         {
             int totalDamage = activator.Offense.Magic + activator.HeldWeapon.MagicMod + _damage;
-            targets[i].TakeDamage(totalDamage, _element);
-            HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + ", dealing " + totalDamage + "\n");
+            HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + ", and DEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " to " + targets[i].Name + "\n");
+            targets[i].TakeDamage(totalDamage, _element, false);
         }
+        activator.CurrMana -= _mpCost;
     }
 }
 
@@ -121,9 +122,17 @@ public class Heal : Magic
         for (int i = 0; i < targets.Count; i++)
         {
             int totalDamage = activator.Offense.Magic + activator.HeldWeapon.MagicMod + _damage;
-            targets[i].TakeDamage(totalDamage, _element);
-            HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + " on " + targets[0] + ", healing " + totalDamage + "\n");
+            if(targets[i] == activator)
+            {
+                HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name +  ", and HEALS themselves for " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " Health" + "\n");
+            }
+            else
+            {
+                HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + " on " + targets[i].Name + ", and HEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " Health" + "\n");
+            }
+            targets[i].TakeDamage(totalDamage, _element, false);
         }
+        activator.CurrMana -= _mpCost;
     }
 }
 
@@ -132,7 +141,7 @@ public class FlipFlop : Magic
 {
     public FlipFlop() : base()
     {
-        _name = "Flip-Flop";
+        _name = "Flip Flop";
         _mpCost = 20;
         _damage = 0;
         _targetRange = 4;
@@ -145,8 +154,35 @@ public class FlipFlop : Magic
     {
         for (int i = 0; i < targets.Count; i++)
         {
-            GridHandler.SwapPlaces(activator, targets[i]);
-            HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + "\n" + activator.Name + " and " + targets[i] + " have swapped places!");
+            HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + "\n");
+            GridHandler.SwapEnemies(activator, targets[i]);
         }
+        activator.CurrMana -= _mpCost;
+    }
+}
+
+public class Chaos : Magic
+{
+    public Chaos() : base()
+    {
+        _name = "Chaos";
+        _mpCost = 35;
+        _damage = 0;
+        _targetRange = 4;
+        _damageRange = 4;
+        _skillShape = DamageShape.SELFAREA;
+        _element = DamageType.DARK;
+    }
+
+    public override void ActivateSkill(Character activator, List<Character> targets)
+    {
+        if(!targets.Contains(activator))
+        {
+            targets.Add(activator);
+        }
+        HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + "!!!\n");
+        GridHandler.SwapEnemies(targets);
+
+        activator.CurrMana -= _mpCost;
     }
 }

@@ -53,21 +53,21 @@ public static class GridHandler
 
     public static void ClearSpace(Vector2 posToClear)
     {
-        //Debug.Log("space cleared");
+        //Debug.Log("space " + posToClear + " cleared");
         _battleGrid[(int)posToClear.x, (int)posToClear.y] = null;
     }
 
-    public static List<Character> GetEnemiesinRange(Vector2 characterPos, Weapon heldWeapon)
+    public static List<Character> GetEnemiesinRange(Vector2 characterPos, Weapon heldWeapon, int TeamNum)
     {
         List<Character> enemiesInRange = new List<Character>();
 
         int currX = (int)characterPos.x;
         int currY = (int)characterPos.y;
 
-        for (int y = -1; y < 1; y++)
+        for (int y = -heldWeapon.Range; y < heldWeapon.Range; y++)
         {
             int tileYPos = currY + y;
-            for (int x = -1; x < 1; x++)
+            for (int x = -heldWeapon.Range; x < heldWeapon.Range; x++)
             {
                 int tileXPos = currX + x;
                 Vector2 checkedPos = new Vector2(tileXPos, tileYPos);
@@ -88,19 +88,54 @@ public static class GridHandler
             }
         }
 
-        return enemiesInRange;
+        return RemoveTeamMembers(enemiesInRange, TeamNum);
     }
-    public static List<Character> GetEnemiesinRange(Vector2 characterPos, Abilities ability)
+
+    public static List<Character> GetEnemiesinRange(Vector2 characterPos, Weapon heldWeapon, int TeamNum, Character target)
     {
         List<Character> enemiesInRange = new List<Character>();
 
         int currX = (int)characterPos.x;
         int currY = (int)characterPos.y;
 
-        for (int y = -1; y < 1; y++)
+        for (int y = -heldWeapon.Range; y < heldWeapon.Range; y++)
         {
             int tileYPos = currY + y;
-            for (int x = -1; x < 1; x++)
+            for (int x = -heldWeapon.Range; x < heldWeapon.Range; x++)
+            {
+                int tileXPos = currX + x;
+                Vector2 checkedPos = new Vector2(tileXPos, tileYPos);
+                if (!heldWeapon.IsRanged && (Mathf.Abs(x) + Mathf.Abs(y)) <= heldWeapon.Range && IsSpaceOccupied(tileXPos, tileYPos, target))
+                {
+                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos)
+                    {
+                        enemiesInRange.Add(_battleGrid[tileXPos, tileYPos]);
+                    }
+                }
+                else if ((Mathf.Abs(x) + Mathf.Abs(y)) == heldWeapon.Range && IsSpaceOccupied(tileXPos, tileYPos, target))
+                {
+                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos)
+                    {
+                        enemiesInRange.Add(_battleGrid[tileXPos, tileYPos]);
+                    }
+                }
+            }
+        }
+
+        return RemoveTeamMembers(enemiesInRange, TeamNum);
+    }
+
+    public static List<Character> GetEnemiesinRange(Vector2 characterPos, Ability ability, int TeamNum)
+    {
+        List<Character> enemiesInRange = new List<Character>();
+
+        int currX = (int)characterPos.x;
+        int currY = (int)characterPos.y;
+
+        for (int y = -ability.TargetRange; y < ability.TargetRange; y++)
+        {
+            int tileYPos = currY + y;
+            for (int x = -ability.TargetRange; x < ability.TargetRange; x++)
             {
                 int tileXPos = currX + x;
                 Vector2 checkedPos = new Vector2(tileXPos, tileYPos);
@@ -114,20 +149,110 @@ public static class GridHandler
             }
         }
 
-        return enemiesInRange;
+        return RemoveTeamMembers(enemiesInRange, TeamNum);
     }
 
 
 
-    public static bool CheckForEnemyWithinRange(Vector2 characterPos, Weapon heldWeapon)
+    public static List<Character> GetEnemiesinRange(Vector2 characterPos, Ability ability, int TeamNum, Character target)
+    {
+        List<Character> enemiesInRange = new List<Character>();
+
+        int currX = (int)characterPos.x;
+        int currY = (int)characterPos.y;
+
+        for (int y = -ability.TargetRange; y < ability.TargetRange; y++)
+        {
+            int tileYPos = currY + y;
+            for (int x = -ability.TargetRange; x < ability.TargetRange; x++)
+            {
+                int tileXPos = currX + x;
+                Vector2 checkedPos = new Vector2(tileXPos, tileYPos);
+                if ((Mathf.Abs(x) + Mathf.Abs(y)) <= ability.TargetRange && IsSpaceOccupied(tileXPos, tileYPos, target))
+                {
+                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos)
+                    {
+                        enemiesInRange.Add(_battleGrid[tileXPos, tileYPos]);
+                    }
+                }
+            }
+        }
+
+        return RemoveTeamMembers(enemiesInRange, TeamNum);
+    }
+
+    public static List<Character> GetTargetsInSplashZone(Vector2 targetPos, Vector2 castPos, Ability ability)
+    {
+        List<Character> enemiesInRange = new List<Character>();
+
+        int currX = (int)targetPos.x;
+        int currY = (int)targetPos.y;
+
+        switch (ability.Shape)
+        {
+            case DamageShape.SINGLE:
+                enemiesInRange.Add(_battleGrid[currX, currY]);
+                break;
+            case DamageShape.STAR:
+                for (int y = -ability.SplashRange; y < ability.SplashRange; y++)
+                {
+                    int tileYPos = currY + y;
+                    for (int x = -ability.SplashRange; x < ability.SplashRange; x++)
+                    {
+                        int tileXPos = currX + x;
+                        if ((Mathf.Abs(x) + Mathf.Abs(y)) <= ability.SplashRange && IsSpaceOccupied(tileXPos, tileYPos))
+                        {
+                            if (tileXPos >= 0 && tileYPos >= 0)
+                            {
+                                enemiesInRange.Add(_battleGrid[tileXPos, tileYPos]);
+                            }
+                        }
+                    }
+                }
+                break;
+            case DamageShape.SELFAREA:
+                currX = (int)castPos.x;
+                currY = (int)castPos.y;
+
+                for (int y = -ability.SplashRange; y < ability.SplashRange; y++)
+                {
+                    int tileYPos = currY + y;
+                    for (int x = -ability.SplashRange; x < ability.SplashRange; x++)
+                    {
+                        int tileXPos = currX + x;
+                        if ((Mathf.Abs(x) + Mathf.Abs(y)) <= ability.SplashRange && IsSpaceOccupied(tileXPos, tileYPos))
+                        {
+                            if (tileXPos >= 0 && tileYPos >= 0)
+                            {
+                                enemiesInRange.Add(_battleGrid[tileXPos, tileYPos]);
+                            }
+                        }
+                    }
+                }
+                break;
+            case DamageShape.LINE:
+                break;
+            case DamageShape.CONE:
+                break;
+            case DamageShape.ALL:
+                break;
+            default:
+                break;
+        }
+
+        return enemiesInRange;
+    }
+
+
+    public static bool CheckForEnemyWithinRange(Vector2 characterPos, Weapon heldWeapon, int TeamNum)
     {
         int currX = (int)characterPos.x;
         int currY = (int)characterPos.y;
 
-        for (int y = -1; y < 1; y++)
+        for (int y = -heldWeapon.Range; y < heldWeapon.Range; y++)
         {
             int tileYPos = currY + y;
-            for (int x = -1; x < 1; x++)
+            for (int x = -heldWeapon.Range; x < heldWeapon.Range; x++)
             {
                 int tileXPos = currX + x;
                 Vector2 checkedPos = new Vector2(tileXPos, tileYPos);
@@ -140,7 +265,7 @@ public static class GridHandler
                 }
                 else if ((Mathf.Abs(x) + Mathf.Abs(y)) == heldWeapon.Range && IsSpaceOccupied(tileXPos, tileYPos))
                 {
-                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos)
+                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos,tileYPos].Team != TeamNum)
                     {
                         return true;
                     }
@@ -151,29 +276,29 @@ public static class GridHandler
         return false;
     }
 
-    public static bool CheckForEnemyWithinRange(Vector2 characterPos, Weapon heldWeapon, Character target)
+    public static bool CheckForEnemyWithinRange(Vector2 characterPos, Weapon heldWeapon, int TeamNum, Character target)
     {
         int currX = (int)characterPos.x;
         int currY = (int)characterPos.y;
 
-        for (int y = -1; y < 1; y++)
+        for (int y = -heldWeapon.Range; y < heldWeapon.Range; y++)
         {
             int tileYPos = currY + y;
-            for (int x = -1; x < 1; x++)
+            for (int x = -heldWeapon.Range; x < heldWeapon.Range; x++)
             {
                 int tileXPos = currX + x;
                 Vector2 checkedPos = new Vector2(tileXPos, tileYPos);
 
                 if (!heldWeapon.IsRanged && (Mathf.Abs(x) + Mathf.Abs(y)) <= heldWeapon.Range && IsSpaceOccupied(tileXPos, tileYPos, target))
                 {
-                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos)
+                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos, tileYPos].Team != TeamNum)
                     {
                         return true;
                     }
                 }
                 else if ((Mathf.Abs(x) + Mathf.Abs(y)) == heldWeapon.Range && IsSpaceOccupied(tileXPos, tileYPos, target))
                 {
-                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos)
+                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos, tileYPos].Team != TeamNum)
                     {
                         return true;
                     }
@@ -185,22 +310,22 @@ public static class GridHandler
         return false;
     }
 
-    public static bool CheckForEnemyWithinRange(Vector2 characterPos, Abilities ability)
+    public static bool CheckForEnemyWithinRange(Vector2 characterPos, Ability ability, int TeamNum)
     {
         int currX = (int)characterPos.x;
         int currY = (int)characterPos.y;
 
-        for (int y = -1; y < 1; y++)
+        for (int y = -ability.TargetRange; y < ability.TargetRange; y++)
         {
             int tileYPos = currY + y;
-            for (int x = -1; x < 1; x++)
+            for (int x = -ability.TargetRange; x < ability.TargetRange; x++)
             {
                 int tileXPos = currX + x;
                 Vector2 checkedPos = new Vector2(tileXPos, tileYPos);
 
                 if ((Mathf.Abs(x) + Mathf.Abs(y)) <= ability.TargetRange && IsSpaceOccupied(tileXPos, tileYPos))
                 {
-                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos)
+                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos, tileYPos].Team != TeamNum)
                     {
                         return true;
                     }
@@ -212,22 +337,22 @@ public static class GridHandler
         return false;
     }
 
-    public static bool CheckForEnemyWithinRange(Vector2 characterPos, Abilities ability, Character target)
+    public static bool CheckForEnemyWithinRange(Vector2 characterPos, Ability ability, int TeamNum, Character target)
     {
         int currX = (int)characterPos.x;
         int currY = (int)characterPos.y;
 
-        for (int y = -1; y < 1; y++)
+        for (int y = -ability.TargetRange; y < ability.TargetRange; y++)
         {
             int tileYPos = currY + y;
-            for (int x = -1; x < 1; x++)
+            for (int x = -ability.TargetRange; x < ability.TargetRange; x++)
             {
                 int tileXPos = currX + x;
                 Vector2 checkedPos = new Vector2(tileXPos, tileYPos);
 
                 if ((Mathf.Abs(x) + Mathf.Abs(y)) <= ability.TargetRange && IsSpaceOccupied(tileXPos, tileYPos, target))
                 {
-                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos)
+                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos,tileYPos].Team != TeamNum)
                     {
                         return true;
                     }
@@ -237,6 +362,21 @@ public static class GridHandler
 
         return false;
     }
+
+    static List<Character> RemoveTeamMembers(List<Character> enemyList, int TeamNum)
+    {
+        for (int i = 0; i < enemyList.Count; i++)
+        {
+            if (enemyList[i].Team == TeamNum)
+            {
+                enemyList.RemoveAt(i);
+                i--;
+            }
+        }
+
+        return enemyList;
+    }
+
 
     public static void MoveEnemy(Character movingCharacter, Vector2 desiredPos)
     {
@@ -257,14 +397,42 @@ public static class GridHandler
             HistoryHandler.AddToCurrentAction(movingCharacter.Name + " STANDS IN PLACE \n");
         }
     }
+    
+    //swap two characters to each others position
+    public static void SwapEnemies(Character c1, Character c2)
+    { 
+        Vector2 temp1 = new Vector2(c1.CurrentPosition.x, c1.CurrentPosition.y);
+        Vector2 temp2 = new Vector2(c2.CurrentPosition.x, c2.CurrentPosition.y);
 
-    public static void SwapPlaces(Character character1, Character character2)
+        ClearSpace(temp2);
+        c1.CurrentPosition = temp2;
+        _battleGrid[(int)temp2.x, (int)temp2.y] = c1;
+
+        c2.CurrentPosition = temp1;
+        _battleGrid[(int)temp1.x, (int)temp1.y] = c2;
+        Debug.Log(c1.CurrentPosition + " --- " + temp2);
+        Debug.Log(c2.CurrentPosition + " --- " + temp1);
+        HistoryHandler.AddToCurrentAction(c1.Name + " and " + c2.Name + " have swapped places!\n");
+    }
+
+    public static void SwapEnemies(List<Character> enemiesToFuckWith)
     {
-        Vector2 temp = character1.CurrentPosition;
-        _battleGrid[(int)character2.CurrentPosition.x, (int)character2.CurrentPosition.y] = character1;
-        character1.CurrentPosition = character2.CurrentPosition;
-        _battleGrid[(int)temp.x, (int)temp.y] = character2;
-        character2.CurrentPosition = temp;
+        int rand1 = 0, rand2 = 0;
+
+
+        for (int i = 0; i < enemiesToFuckWith.Count; i++)
+        {
+            while(rand1 == rand2)
+            {
+                rand1 = Random.Range(0, enemiesToFuckWith.Count);
+                rand2 = Random.Range(0, enemiesToFuckWith.Count);
+            }
+
+            SwapEnemies(enemiesToFuckWith[rand1], enemiesToFuckWith[rand2]);
+
+            rand1 = 0;
+            rand2 = 0;
+        }
     }
 
     //checks to see if the space is generically occupied
