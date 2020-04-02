@@ -63,11 +63,16 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\Character.cs" />
-    <Compile Include="Assets\Scripts\CharacterStrategy.cs" />
-    <Compile Include="Assets\Scripts\FightHandler.cs" />
-    <Compile Include="Assets\Scripts\GridHandler.cs" />
-    <Compile Include="Assets\Scripts\HistoryHandler.cs" />
+    <Compile Include="Assets\Scripts\CharacterScripts\AbilityScripts\Ability.cs" />
+    <Compile Include="Assets\Scripts\CharacterScripts\AbilityScripts\Magic.cs" />
+    <Compile Include="Assets\Scripts\CharacterScripts\AbilityScripts\Skill.cs" />
+    <Compile Include="Assets\Scripts\CharacterScripts\AbilityScripts\SpellBook.cs" />
+    <Compile Include="Assets\Scripts\CharacterScripts\Character.cs" />
+    <Compile Include="Assets\Scripts\CharacterScripts\CharacterStrategy.cs" />
+    <Compile Include="Assets\Scripts\CharacterScripts\WeaponScripts\Weapon.cs" />
+    <Compile Include="Assets\Scripts\Handlers\FightHandler.cs" />
+    <Compile Include="Assets\Scripts\Handlers\GridHandler.cs" />
+    <Compile Include="Assets\Scripts\Handlers\HistoryHandler.cs" />
     <Compile Include="Assets\Scripts\TerrainSpace.cs" />
     <Compile Include="Assets\Scripts\UIHolder.cs" />
     <Reference Include="Unity.Timeline.Editor">

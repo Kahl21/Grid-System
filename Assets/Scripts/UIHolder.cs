@@ -12,6 +12,9 @@ public class UIHolder : MonoBehaviour
     InputField _numberOfEnemiesText;
     int _numberOfEnemies;
     [SerializeField]
+    InputField _numberOfTeamsText;
+    int _numberOfTeams;
+    [SerializeField]
     Text _gridSizeText;
     int _gridX;
     int _gridY;
@@ -50,7 +53,9 @@ public class UIHolder : MonoBehaviour
         _fightStarted = false;
         _BFUI.SetActive(true);
         _AFUI.SetActive(false);
-        _numberOfEnemies = 2;
+        _numberOfTeams = 2;
+        SetNumberOfTeamsText();
+        _numberOfEnemies = 1;
         SetNumberOfEnemiesText();
         _gridX = 4;
         _gridY = 4;
@@ -118,30 +123,15 @@ public class UIHolder : MonoBehaviour
         _numberOfEnemiesText.text = _numberOfEnemies.ToString();
     }
 
-    //Called Whenever _numberOfEnemies needs to be changed
-    public void SetNumberOfEnemiesText(bool positiveIncrement)
-    {
-        if (positiveIncrement && _numberOfEnemies < (_gridX * _gridY))
-        {
-            _numberOfEnemies++;
-        }
-        else if(!positiveIncrement && _numberOfEnemies > 2)
-        {
-            _numberOfEnemies--;
-        }
-
-        SetNumberOfEnemiesText();
-    }
-
     public void CheckNumberOfEnemies()
     {
         try
         {
             int temp = System.Convert.ToInt32(_numberOfEnemiesText.text);
 
-            if(temp > _gridX * _gridY)
+            if(temp * _numberOfTeams > _gridX * _gridY)
             {
-                _numberOfEnemies = _gridX * _gridY;
+                _numberOfEnemies = (_gridX * _gridY) / _numberOfTeams;
                 SetNumberOfEnemiesText();
             }
             else
@@ -152,9 +142,40 @@ public class UIHolder : MonoBehaviour
         }
         catch
         {
-            _numberOfEnemies = 2;
+            _numberOfEnemies = 1;
             SetNumberOfEnemiesText();
         }        
+    }
+
+    public void SetNumberOfTeamsText()
+    {
+        _numberOfTeamsText.text = _numberOfTeams.ToString();
+    }
+
+    public void CheckNumberOfTeams()
+    { 
+        try
+        {
+            int temp = System.Convert.ToInt32(_numberOfTeamsText.text);
+            if(temp > _gridX * _gridY)
+            {
+                _numberOfTeams = _gridX * _gridY;
+                CheckNumberOfEnemies();
+                SetNumberOfTeamsText();
+            }
+            else
+            {
+                _numberOfTeams = temp;
+                CheckNumberOfEnemies();
+                SetNumberOfTeamsText();
+            }
+        }
+        catch
+        {
+            _numberOfTeams = 2;
+            CheckNumberOfEnemies();
+            SetNumberOfTeamsText();
+        }
     }
 
     void SetGridSizeText()
@@ -205,9 +226,8 @@ public class UIHolder : MonoBehaviour
         _BFUI.SetActive(false);
         GridHandler.CreateNewGrid(_gridX, _gridY);
         HistoryHandler.Init(this);
-        FightHandler.Init(_numberOfEnemies);
+        FightHandler.Init(_numberOfEnemies, _numberOfTeams);
         _AFUI.SetActive(true);
-
         SetFightInfo();
         _fightStarted = true;
     }
