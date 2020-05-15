@@ -34,6 +34,7 @@ public class DoubleSlash : Skill
     public DoubleSlash() : base()
     {
         _name = "Double Slash";
+        _desc = "Slash the targeted enemy twice.";
         _mpCost = 20;
         _damage = 10;
         _targetRange = 1;
@@ -59,6 +60,7 @@ public class FlameStrike : Skill
     public FlameStrike() : base()
     {
         _name = "FireStrike";
+        _desc = "Strike the enemy with your blade covered in Flames.";
         _mpCost = 10;
         _damage = 10;
         _targetRange = 1;
@@ -75,6 +77,7 @@ public class IcyStrike : Skill
     public IcyStrike() : base()
     {
         _name = "Icy Strike";
+        _desc = "Strike the enemy with your blade covered in Ice.";
         _mpCost = 10;
         _damage = 10;
         _targetRange = 1;
@@ -90,6 +93,8 @@ public class ThunderSlash : Skill
     public ThunderSlash() : base()
     {
         _name = "Thunder Slash";
+
+        _desc = "Strike the enemy so fast it leaves a thunderclap.";
         _mpCost = 10;
         _damage = 10;
         _targetRange = 1;
@@ -106,6 +111,7 @@ public class DarkBlade : Skill
     public DarkBlade() : base()
     {
         _name = "Dark Blade";
+        _desc = "Strike the enemy with your blade shrouded in darkness.";
         _mpCost = 10;
         _damage = 10;
         _targetRange = 1;
@@ -121,6 +127,7 @@ public class LightSlash : Skill
     public LightSlash() : base()
     {
         _name = "Light Slash";
+        _desc = "Strike the enemy with a blinding blade.";
         _mpCost = 10;
         _damage = 10;
         _targetRange = 1;
@@ -136,6 +143,7 @@ public class HealingPalm : Skill
     public HealingPalm() : base()
     {
         _name = "Healing Palm";
+        _desc = "the warmth of you hands soothes the soul of you or an ally.";
         _mpCost = 15;
         _damage = 0;
         _targetRange = 1;
@@ -168,6 +176,7 @@ public class WarpStrike : Skill
     public WarpStrike() : base()
     {
         _name = "WarpStrike";
+        _desc = "You and your target travel between portals, striking your opponent and trading places with them.";
         _mpCost = 20;
         _damage = 20;
         _targetRange = 3;
@@ -194,6 +203,7 @@ public class Yi_Q : Skill
     public Yi_Q() : base()
     {
         _name = "Yi Q";
+        _desc = "A busted ability on an annoying champ. Scales incredibly well with AD.";
         _mpCost = 35;
         _damage = 15;
         _targetRange = 2;

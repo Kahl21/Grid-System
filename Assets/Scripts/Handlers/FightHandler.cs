@@ -2,14 +2,21 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum TeamType
+{
+    PLAYER,
+    ENEMY,
+    OTHER
+}
+
 public static class FightHandler
 {
 
     static int _enemiesToMake;
     static int _currentEnemyNum;
 
-    static List<Character> _spawnedEnemies;
-    public static List<Character> GetEnemies { get { return _spawnedEnemies; } }
+    static List<Character> _spawnedCharacters;
+    public static List<Character> GetEnemies { get { return _spawnedCharacters; } }
    // static List<Character> _turnOrder;
    // public static List<Character> GetTurnOrder;
 
@@ -18,7 +25,7 @@ public static class FightHandler
     {
         _enemiesToMake = 2;
         _currentEnemyNum = 0;
-        _spawnedEnemies = new List<Character>();
+        _spawnedCharacters = new List<Character>();
         CreateEnemies();
     }
 
@@ -27,7 +34,7 @@ public static class FightHandler
     {
         _currentEnemyNum = 0;
         _enemiesToMake = numberOfEnemies;
-        _spawnedEnemies = new List<Character>();
+        _spawnedCharacters = new List<Character>();
         CreateEnemies();
         HistoryHandler.AddToCurrentAction("Battle Start!");
         HistoryHandler.FinalizeAction();
@@ -37,26 +44,47 @@ public static class FightHandler
     {
         _currentEnemyNum = 0;
         _enemiesToMake = numberOfEnemies;
-        _spawnedEnemies = new List<Character>();
+        _spawnedCharacters = new List<Character>();
         CreateEnemies(numberOfTeams);
-        _spawnedEnemies = RollForInitiative(_spawnedEnemies);
+        _spawnedCharacters = RollForInitiative(_spawnedCharacters);
         HistoryHandler.AddToCurrentAction("Battle Start!");
         HistoryHandler.FinalizeAction();
     }
 
-    //spawns enemies
+    public static void Init(int numberOfEnemies, List<DraggableCharacter> playerstospawn)
+    {
+        _currentEnemyNum = 0;
+        _enemiesToMake = numberOfEnemies;
+        _spawnedCharacters = new List<Character>();
+        CreatePlayerTeam(playerstospawn);
+        CreateEnemies(numberOfEnemies);
+        _spawnedCharacters = RollForInitiative(_spawnedCharacters);
+        HistoryHandler.AddToCurrentAction("Battle Start!");
+        //HistoryHandler.FinalizeAction();
+    }
+
+    //spawns enemies and adds them to the Data Grid in the GridHandler
     static void CreateEnemies()
     {
         for (int i = 0; i < _enemiesToMake; i++)
         {
-            Vector2 spawn = GridHandler.GetSpawn();
-            Character newCharacter = new Character("Enemy", (i+1).ToString(), -1, spawn);
+            Vector2 spawn = GridHandler.GetSpawn(false);
+            Character newCharacter = new Character("Enemy", (i+1).ToString(), TeamType.ENEMY, spawn);
             GridHandler.PlaceEnemyOnBoard(newCharacter);
-            _spawnedEnemies.Add(newCharacter);
+            _spawnedCharacters.Add(newCharacter);
         }
     }
-
-    static void CreateEnemies(int numberOfTeams)
+    static void CreateEnemies(int numberOfEnemiesToSpawn)
+    {
+        for (int i = 0; i < _enemiesToMake; i++)
+        {
+            Vector2 spawn = GridHandler.GetSpawn(false);
+            Character newCharacter = new Character("Enemy", (i + 1).ToString(), TeamType.ENEMY, spawn);
+            GridHandler.PlaceEnemyOnBoard(newCharacter);
+            _spawnedCharacters.Add(newCharacter);
+        }
+    }
+    /*static void CreateEnemies(int numberOfTeams)
     {
         for (int v = 0; v < numberOfTeams; v++)
         {
@@ -65,17 +93,42 @@ public static class FightHandler
                 Vector2 spawn = GridHandler.GetSpawn();
                 Character newCharacter = new Character("Enemy", (i + 1 + (v *_enemiesToMake)).ToString(), v + 1, spawn);
                 GridHandler.PlaceEnemyOnBoard(newCharacter);
-                _spawnedEnemies.Add(newCharacter);
+                _spawnedCharacters.Add(newCharacter);
             }
+        }
+    }*/
+    static void CreatePlayerTeam(List<DraggableCharacter> playerTeam)
+    {
+        for (int i = 0; i < playerTeam.Count; i++)
+        {
+            Vector2 spawn = GridHandler.GetSpawn(true);
+            Character newCharacter;
+            switch (playerTeam[i].GetClass)
+            {
+                case PlayerClasses.WARRIOR:
+                    newCharacter = new Warrior("Xavier", "0", TeamType.PLAYER, spawn);
+                    break;
+                case PlayerClasses.MAGE:
+                    newCharacter = new Mage();
+                    break;
+                default:
+                    newCharacter = new Character();
+                    break;
+            }
+
+            GridHandler.PlaceEnemyOnBoard(newCharacter);
+            _spawnedCharacters.Add(newCharacter);
         }
     }
 
+    //Looks through all of the players and enemies and sorts them by how fast they are
+    //by checking Speed stat
     static List<Character> RollForInitiative(List<Character> enemies)
     {
         List<Character> unsortedEnemies = new List<Character>(enemies);
         List<Character> sortedEnemies = new List<Character>();
 
-        while(sortedEnemies.Count != _spawnedEnemies.Count)
+        while(sortedEnemies.Count != _spawnedCharacters.Count)
         {
             Character temp = unsortedEnemies[0];
             for (int i = 0; i < unsortedEnemies.Count; i++)
@@ -91,7 +144,7 @@ public static class FightHandler
 
         for (int i = 0; i < sortedEnemies.Count; i++)
         {
-            Debug.Log(sortedEnemies[i].Name + ", " + sortedEnemies[i].Team + ", " + sortedEnemies[i].Speed);
+            //Debug.Log(sortedEnemies[i].Name + ", " + sortedEnemies[i].Team + ", " + sortedEnemies[i].Speed);
         }
 
         return sortedEnemies;
@@ -101,10 +154,10 @@ public static class FightHandler
     //does not end until 1 enemy is left
     public static void ContinueFight()
     {
-            if(_currentEnemyNum < _spawnedEnemies.Count)
+            if(_currentEnemyNum < _spawnedCharacters.Count)
             {
-                _spawnedEnemies[_currentEnemyNum].TakeAction();
-                HistoryHandler.FinalizeAction(_spawnedEnemies[_currentEnemyNum]);
+                _spawnedCharacters[_currentEnemyNum].TakeAction();
+                HistoryHandler.FinalizeAction(_spawnedCharacters[_currentEnemyNum]);
                 
                 _currentEnemyNum++;
             }
@@ -117,13 +170,13 @@ public static class FightHandler
 
     static public bool LastManStanding()
     {
-        for (int i = 0; i < _spawnedEnemies.Count; i++)
+        for (int i = 0; i < _spawnedCharacters.Count; i++)
         {
-            Character check = _spawnedEnemies[i];
+            Character check = _spawnedCharacters[i];
             if(check.IsDead)
             {
                 GridHandler.ClearSpace(check.CurrentPosition);
-                _spawnedEnemies.Remove(check);
+                _spawnedCharacters.Remove(check);
                 if (_currentEnemyNum >= i)
                 {
                     i--;
@@ -132,12 +185,12 @@ public static class FightHandler
             }
         }
 
-        if(_spawnedEnemies.Count > 1)
+        if(_spawnedCharacters.Count > 1)
         {
-            Character check = _spawnedEnemies[0];
-            for (int i = 0; i < _spawnedEnemies.Count; i++)
+            Character check = _spawnedCharacters[0];
+            for (int i = 0; i < _spawnedCharacters.Count; i++)
             {
-                if (_spawnedEnemies[i].Team != check.Team)
+                if (_spawnedCharacters[i].Team != check.Team)
                 {
                     return false;
                 }
@@ -152,17 +205,17 @@ public static class FightHandler
         }
     }
 
-    static public Character FindRandomEnemy(Character me, int teamNum)
+    static public Character FindRandomEnemy(Character me, TeamType team)
     {
         //Debug.Log("finding enemies");
-        int randNum = Random.Range(0, _spawnedEnemies.Count);
+        int randNum = Random.Range(0, _spawnedCharacters.Count);
 
         try
         {
-            while (me == _spawnedEnemies[randNum] || _spawnedEnemies[randNum].IsDead || _spawnedEnemies[randNum].Team == teamNum)
+            while (me == _spawnedCharacters[randNum] || _spawnedCharacters[randNum].IsDead || _spawnedCharacters[randNum].Team == team)
             {
                
-                randNum = Random.Range(0, _spawnedEnemies.Count);
+                randNum = Random.Range(0, _spawnedCharacters.Count);
             }
         }
         catch
@@ -170,7 +223,7 @@ public static class FightHandler
             //Debug.Log("died in finding");
         }
 
-        return _spawnedEnemies[randNum];
+        return _spawnedCharacters[randNum];
     }
 
     //Attack a random Enemy

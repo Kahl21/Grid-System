@@ -189,7 +189,6 @@ public static class HistoryHandler
             {
                 AddToCurrentAction("Team " + FightHandler.GetEnemies[0].Team + " WINS!!!");
                 FinalizeAction(FightHandler.GetEnemies[0]);
-                _uiRef.StopAuto();
             }
         }
     }

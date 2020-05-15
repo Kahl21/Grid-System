@@ -1,37 +1,149 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
+public enum GridSize
+{
+    Small,
+    Medium,
+    Large
+}
+
+public enum GridTraits
+{
+    NONE,
+    FORESTS,
+    MARSH,
+    HOLES,
+    RANDOM
+}
 
 public static class GridHandler
 {
 
     static Character[,] _battleGrid;
+    public static int GetGridLength { get { return _battleGrid.GetLength(0); } }
     static TerrainSpace[,] _terrainGrid;
     static int[,] _moveGrid;
 
-    public static void CreateNewGrid(int numOfRows, int numOfColms)
-    {
-        _battleGrid = new Character[numOfRows, numOfColms];
+    static WorldGridHandler _worldGrid;
 
-        _moveGrid = new int[numOfRows, numOfColms];
+    public static void Init(WorldGridHandler trackref)
+    {
+        _worldGrid = trackref;
+    }
+
+    public static void CreateNewGrid(GridSize size, GridTraits trait, float maxheight)
+    {
+        switch (size)
+        {
+            case GridSize.Small:
+                _battleGrid = new Character[6, 6];
+                break;
+            case GridSize.Medium:
+                _battleGrid = new Character[8, 8];
+                break;
+            case GridSize.Large:
+                _battleGrid = new Character[10, 10];
+                break;
+            default:
+                break;
+        }
+
+        _moveGrid = new int[_battleGrid.GetLength(0), _battleGrid.GetLength(1)];
         ResetMoveGrid();
 
-        _terrainGrid = new TerrainSpace[numOfRows, numOfColms];
+        GenerateTerrain(trait, maxheight);
+
+        _worldGrid.GenerateWorldGrid(_terrainGrid);
+    }
+
+    public static void GenerateTerrain(GridTraits terrainTrait, float maxHeight)
+    {
+        _terrainGrid = new TerrainSpace[_battleGrid.GetLength(0), _battleGrid.GetLength(1)];
         for (int y = 0; y < _terrainGrid.GetLength(1); y++)
         {
             for (int x = 0; x < _terrainGrid.GetLength(0); x++)
             {
-                _terrainGrid[x, y] = new TerrainSpace();
+                _terrainGrid[x, y] = GenerateTile(terrainTrait, maxHeight);
             }
+        }
+    }
+
+    static TerrainSpace GenerateTile(GridTraits terrain, float maxheight)
+    {
+        int rand = UnityEngine.Random.Range(0, 101);
+        float heightfloatvalue = UnityEngine.Random.Range(0f, maxheight);
+        float height = (float)Math.Round(heightfloatvalue * 2f, MidpointRounding.AwayFromZero) / 2;
+        //Debug.Log(height);
+        int forestChance, waterChance, holeChance;
+        switch (terrain)
+        {
+            case GridTraits.NONE:
+                return new TerrainSpace(height);
+            case GridTraits.FORESTS:
+                forestChance = 75;
+                if (rand < forestChance)
+                {
+                    return new ForestSpace(height);
+                }
+                else
+                {
+                    return new TerrainSpace(height);
+                }
+            case GridTraits.MARSH:
+                waterChance = 50;
+                if (rand < waterChance)
+                {
+                    return new WaterSpace(height);
+                }
+                else
+                {
+                    return new TerrainSpace(height);
+                }
+            case GridTraits.HOLES:
+                holeChance = 30;
+                if (rand < holeChance)
+                {
+                    return new HoleSpace(height);
+                }
+                else
+                {
+                    return new TerrainSpace(height);
+                }
+            case GridTraits.RANDOM:
+                forestChance = 30;
+                waterChance = 20;
+                holeChance = 10;
+                if (rand < forestChance)
+                {
+                    return new ForestSpace(height);
+                }
+                else if(rand < forestChance + waterChance)
+                {
+                    return new WaterSpace(height);
+                }
+                else if(rand < forestChance + waterChance + holeChance)
+                {
+                    return new HoleSpace(height);
+                }
+                else
+                {
+                    return new TerrainSpace(height);
+                }
+            default:
+                return new TerrainSpace();
         }
     }
 
     public static void PlaceEnemyOnBoard(Character newCharacter)
     {
         _battleGrid[(int)newCharacter.CurrentPosition.x, (int)newCharacter.CurrentPosition.y] = newCharacter;
+        _worldGrid.SpawnCharacter(newCharacter, (int)newCharacter.CurrentPosition.x, (int)newCharacter.CurrentPosition.y);
     }
 
-    public static Vector2 GetSpawn()
+    public static Vector2 GetSpawn(bool isPlayerCharacter)
     {
         List<Vector2> availableSpawns = new List<Vector2>();
 
@@ -41,12 +153,13 @@ public static class GridHandler
             {
                 if (x >= 0 && y >= 0 && !IsSpaceOccupied(x, y))
                 {
-                    availableSpawns.Add(new Vector2(x, y));
+                        availableSpawns.Add(new Vector2(x, y));
+                    
                 }
             }
         }
 
-        int randspot = Random.Range(0, availableSpawns.Count);
+        int randspot = UnityEngine.Random.Range(0, availableSpawns.Count);
 
         return availableSpawns[randspot];
     }
@@ -57,7 +170,7 @@ public static class GridHandler
         _battleGrid[(int)posToClear.x, (int)posToClear.y] = null;
     }
 
-    public static List<Character> GetEnemiesinRange(Vector2 characterPos, Weapon heldWeapon, int TeamNum)
+    public static List<Character> GetEnemiesinRange(Vector2 characterPos, Weapon heldWeapon, TeamType team)
     {
         List<Character> enemiesInRange = new List<Character>();
 
@@ -88,10 +201,10 @@ public static class GridHandler
             }
         }
 
-        return RemoveTeamMembers(enemiesInRange, TeamNum);
+        return RemoveTeamMembers(enemiesInRange, team);
     }
 
-    public static List<Character> GetEnemiesinRange(Vector2 characterPos, Weapon heldWeapon, int TeamNum, Character target)
+    public static List<Character> GetEnemiesinRange(Vector2 characterPos, Weapon heldWeapon, TeamType team, Character target)
     {
         List<Character> enemiesInRange = new List<Character>();
 
@@ -122,10 +235,10 @@ public static class GridHandler
             }
         }
 
-        return RemoveTeamMembers(enemiesInRange, TeamNum);
+        return RemoveTeamMembers(enemiesInRange, team);
     }
 
-    public static List<Character> GetEnemiesinRange(Vector2 characterPos, Ability ability, int TeamNum)
+    public static List<Character> GetEnemiesinRange(Vector2 characterPos, Ability ability, TeamType team)
     {
         List<Character> enemiesInRange = new List<Character>();
 
@@ -149,12 +262,12 @@ public static class GridHandler
             }
         }
 
-        return RemoveTeamMembers(enemiesInRange, TeamNum);
+        return RemoveTeamMembers(enemiesInRange, team);
     }
 
 
 
-    public static List<Character> GetEnemiesinRange(Vector2 characterPos, Ability ability, int TeamNum, Character target)
+    public static List<Character> GetEnemiesinRange(Vector2 characterPos, Ability ability, TeamType team, Character target)
     {
         List<Character> enemiesInRange = new List<Character>();
 
@@ -178,7 +291,7 @@ public static class GridHandler
             }
         }
 
-        return RemoveTeamMembers(enemiesInRange, TeamNum);
+        return RemoveTeamMembers(enemiesInRange, team);
     }
 
     public static List<Character> GetTargetsInSplashZone(Vector2 targetPos, Vector2 castPos, Ability ability)
@@ -244,7 +357,7 @@ public static class GridHandler
     }
 
 
-    public static bool CheckForEnemyWithinRange(Vector2 characterPos, Weapon heldWeapon, int TeamNum)
+    public static bool CheckForEnemyWithinRange(Vector2 characterPos, Weapon heldWeapon, TeamType team)
     {
         int currX = (int)characterPos.x;
         int currY = (int)characterPos.y;
@@ -265,7 +378,7 @@ public static class GridHandler
                 }
                 else if ((Mathf.Abs(x) + Mathf.Abs(y)) == heldWeapon.Range && IsSpaceOccupied(tileXPos, tileYPos))
                 {
-                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos,tileYPos].Team != TeamNum)
+                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos,tileYPos].Team != team)
                     {
                         return true;
                     }
@@ -276,7 +389,7 @@ public static class GridHandler
         return false;
     }
 
-    public static bool CheckForEnemyWithinRange(Vector2 characterPos, Weapon heldWeapon, int TeamNum, Character target)
+    public static bool CheckForEnemyWithinRange(Vector2 characterPos, Weapon heldWeapon, TeamType team, Character target)
     {
         int currX = (int)characterPos.x;
         int currY = (int)characterPos.y;
@@ -291,14 +404,14 @@ public static class GridHandler
 
                 if (!heldWeapon.IsRanged && (Mathf.Abs(x) + Mathf.Abs(y)) <= heldWeapon.Range && IsSpaceOccupied(tileXPos, tileYPos, target))
                 {
-                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos, tileYPos].Team != TeamNum)
+                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos, tileYPos].Team != team)
                     {
                         return true;
                     }
                 }
                 else if ((Mathf.Abs(x) + Mathf.Abs(y)) == heldWeapon.Range && IsSpaceOccupied(tileXPos, tileYPos, target))
                 {
-                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos, tileYPos].Team != TeamNum)
+                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos, tileYPos].Team != team)
                     {
                         return true;
                     }
@@ -310,7 +423,7 @@ public static class GridHandler
         return false;
     }
 
-    public static bool CheckForEnemyWithinRange(Vector2 characterPos, Ability ability, int TeamNum)
+    public static bool CheckForEnemyWithinRange(Vector2 characterPos, Ability ability, TeamType team)
     {
         int currX = (int)characterPos.x;
         int currY = (int)characterPos.y;
@@ -325,7 +438,7 @@ public static class GridHandler
 
                 if ((Mathf.Abs(x) + Mathf.Abs(y)) <= ability.TargetRange && IsSpaceOccupied(tileXPos, tileYPos))
                 {
-                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos, tileYPos].Team != TeamNum)
+                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos, tileYPos].Team != team)
                     {
                         return true;
                     }
@@ -337,7 +450,7 @@ public static class GridHandler
         return false;
     }
 
-    public static bool CheckForEnemyWithinRange(Vector2 characterPos, Ability ability, int TeamNum, Character target)
+    public static bool CheckForEnemyWithinRange(Vector2 characterPos, Ability ability, TeamType team, Character target)
     {
         int currX = (int)characterPos.x;
         int currY = (int)characterPos.y;
@@ -352,7 +465,7 @@ public static class GridHandler
 
                 if ((Mathf.Abs(x) + Mathf.Abs(y)) <= ability.TargetRange && IsSpaceOccupied(tileXPos, tileYPos, target))
                 {
-                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos,tileYPos].Team != TeamNum)
+                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos,tileYPos].Team != team)
                     {
                         return true;
                     }
@@ -363,11 +476,11 @@ public static class GridHandler
         return false;
     }
 
-    static List<Character> RemoveTeamMembers(List<Character> enemyList, int TeamNum)
+    static List<Character> RemoveTeamMembers(List<Character> enemyList, TeamType team)
     {
         for (int i = 0; i < enemyList.Count; i++)
         {
-            if (enemyList[i].Team == TeamNum)
+            if (enemyList[i].Team == team)
             {
                 enemyList.RemoveAt(i);
                 i--;
@@ -424,8 +537,8 @@ public static class GridHandler
         {
             while(rand1 == rand2)
             {
-                rand1 = Random.Range(0, enemiesToFuckWith.Count);
-                rand2 = Random.Range(0, enemiesToFuckWith.Count);
+                rand1 = UnityEngine.Random.Range(0, enemiesToFuckWith.Count);
+                rand2 = UnityEngine.Random.Range(0, enemiesToFuckWith.Count);
             }
 
             SwapEnemies(enemiesToFuckWith[rand1], enemiesToFuckWith[rand2]);
@@ -440,7 +553,7 @@ public static class GridHandler
     {
         try
         {
-            if (_battleGrid[pointx, pointy] != null)
+            if (_battleGrid[pointx, pointy] != null && _terrainGrid[pointx, pointy].GetTerrainType != 'O')
             {
                 return true;
             }
@@ -478,7 +591,7 @@ public static class GridHandler
     {
         try
         {
-            if (_battleGrid[(int)checkPosition.x, (int)checkPosition.y] != null)
+            if (_battleGrid[(int)checkPosition.x, (int)checkPosition.y] != null && _terrainGrid[(int)checkPosition.x, (int)checkPosition.y].GetTerrainType != 'O')
             {
                 return true;
             }
@@ -496,7 +609,7 @@ public static class GridHandler
     {
         try
         {
-            if (_battleGrid[(int)checkPosition.x, (int)checkPosition.y] == target)
+            if (_battleGrid[(int)checkPosition.x, (int)checkPosition.y] == target && _terrainGrid[(int)checkPosition.x, (int)checkPosition.y].GetTerrainType != 'O')
             {
                 return true;
             }

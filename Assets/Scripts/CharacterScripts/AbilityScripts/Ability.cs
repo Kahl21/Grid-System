@@ -17,6 +17,9 @@ public class Ability
     protected string _name;
     public string Name { get { return _name; } }
 
+    protected string _desc;
+    public string Description { get { return _desc; } }
+
     protected int _mpCost;
     public int Cost { get { return _mpCost; } }
 
@@ -39,6 +42,7 @@ public class Ability
     public Ability()
     {
         _name = "Nothing";
+        _desc = "Base ability no skill here";
         _mpCost = 10;
         _damage = 10;
         _targetRange = 2;
