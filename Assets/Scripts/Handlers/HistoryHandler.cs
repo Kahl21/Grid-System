@@ -16,6 +16,7 @@ public static class HistoryHandler
 
     static UIHolder _uiRef;
 
+    //initialize
     public static void Init(UIHolder reference)
     {
         _uiRef = reference;
@@ -29,6 +30,8 @@ public static class HistoryHandler
 
     }
 
+    //adds a player death to the history UI
+    //as a string
     static public void DeclareDeath(Character deadCharacter)
     {
         AddToCurrentAction(" \n" + deadCharacter.Name + " has been slain!\n");
@@ -63,11 +66,14 @@ public static class HistoryHandler
         _actionSentence = " ";
     }
 
+    //adds the layout of the grid with all characters on it
+    //as a string
     static public void SaveCurrentGridLayout(string gridlayout)
     {
         _gridhistory.Push(gridlayout);
     }
     
+    //shows the current characters stats in the character UI
     static void SaveCharacterInfo(Character chara)
     {
         string characterInfo = "Team " + chara.Team + "\n";
@@ -127,6 +133,7 @@ public static class HistoryHandler
         return _characterInfo.Peek();
     }
 
+    //Resets current history to the first ever action of the battle
     static public void SetToBeginning()
     {
         try
@@ -193,6 +200,7 @@ public static class HistoryHandler
         }
     }
 
+    //sends the current action back to the UIHandler
     static public int GetCurrentActionNumber()
     {
         return _actionsTaken;

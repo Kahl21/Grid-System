@@ -10,6 +10,7 @@ public enum PlayerClasses
     MAGE
 }
 
+
 public class UIHolder : MonoBehaviour
 {
     //character Select UI
@@ -30,7 +31,7 @@ public class UIHolder : MonoBehaviour
 
     RenderTexture _textureforgridcam;
 
-    //Init
+    //Init is the first thing that happens
     private void Awake()
     {
         SpellBook.LoadSpellBook();
@@ -41,6 +42,7 @@ public class UIHolder : MonoBehaviour
        
     }
 
+    //for resetting game 
     public void Reawake()
     {
         _csUI.gameObject.SetActive(true);
@@ -48,6 +50,12 @@ public class UIHolder : MonoBehaviour
         _battleUI.gameObject.SetActive(false);
     }
 
+    private void Update()
+    {
+        GameUpdate.CheckUpdate();
+    }
+
+    //grabs all relevent UI scripts from children
     void LoadUIRefs()
     {
         _csUI = transform.GetChild(0).GetComponent<CharacterSelectUI>();
@@ -56,6 +64,8 @@ public class UIHolder : MonoBehaviour
         _battleUI = transform.GetChild(2).GetComponent<BattleUI>();
     }
 
+    //called when the player is done with the character select screen
+    //sets up grid setup menu
     public void CharacterSelectDone(List<DraggableCharacter> playerTeam)
     {
         _playerCharacters = new List<DraggableCharacter>();
@@ -63,10 +73,11 @@ public class UIHolder : MonoBehaviour
 
         _csUI.gameObject.SetActive(false);
 
-        _gridUI.Init(this);
+        _gridUI.Init(this, _battleUI);
         _gridUI.gameObject.SetActive(true);
     }
 
+    //called when grid setup is complete, start battle on grid
     public void StartFight(int enemies, CameraFollow battleCam)
     {
         _gridCamera = battleCam;
@@ -84,84 +95,9 @@ public class UIHolder : MonoBehaviour
         _battleUI.gameObject.SetActive(true);
         _battleUI.Init(this, _gridCamera);
         _castingForClicks = false;
+        Debug.Log("starting Player Control");
         _inBattle = true;
     }
 
-    private void Update()
-    {
-        if (_inBattle)
-        {
-            if (_castingForClicks)
-            {
-                CheckForExitingClick();
-            }
-            else
-            {
-                PlayerInteract();
-            }
-        }
-    }
-
-    void PlayerInteract()
-    {
-        Ray ray = _gridCamera.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-
-        //Debug.DrawRay(ray.origin, ray.direction, Color.black);
-        //Debug.Log("casting");
-        if (Physics.Raycast(ray, out hit))
-        {
-
-            //Debug.Log("hit something");
-            Collider objCollider = hit.collider;
-
-            _battleUI.SetHeight(objCollider.transform.position.y);
-
-            if (objCollider.GetComponent<Tile>())
-            {
-                //Debug.Log("tile hover");
-                Tile tile = objCollider.GetComponent<Tile>();
-
-                if(tile.PersonOnMe != null)
-                {
-                    ActivateCharacterDetail(tile.PersonOnMe);
-                }
-            }
-            else if (objCollider.GetComponent<GridToken>())
-            {
-                //Debug.Log("character hover");
-                GridToken gt = objCollider.GetComponent<GridToken>();
-
-                _battleUI.HighlightCharacter(gt);
-                ActivateCharacterDetail(gt);
-            }
-        }
-        else
-        {
-            _battleUI.UnHighlightCharacter();
-            _battleUI.SetHeight(0f);
-        }
-    }
-
-    public void CheckForExitingClick()
-    {
-        if(Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
-        {
-            _battleUI.UnShowDetail();
-            _castingForClicks = false;
-        }
-    }
-
-    public void ActivateCharacterDetail(GridToken token)
-    {
-        if (Input.GetMouseButtonDown(0))
-        {
-            _battleUI.ShowActionsMenu(token);
-        }
-        else if(Input.GetMouseButtonDown(1))
-        {
-            _battleUI.ShowDetail(token);
-            _castingForClicks = true;
-        }
-    }
+   
 }

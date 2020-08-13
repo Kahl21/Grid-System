@@ -46,6 +46,7 @@ public class Character
     public int Speed { get { return _mySpeed; } }
 
     protected int _myMovement;
+    protected int _currMovement;
     public int Movement { get { return _myMovement; } }
 
     protected bool _dead;
@@ -200,11 +201,28 @@ public class Character
     }
 
     //Moves unit randomly to any space it can travel
+    public void StartMove()
+    {
+        _currMovement = _myMovement;
+        Move();
+    }
+
     public void Move()
     {
-        _myMoves = GridHandler.WhereCanIMove(_gridPos, _myMovement);
-        int randNum = Random.Range(0, _myMoves.Count);
-        GridHandler.MoveEnemy(this, _myMoves[randNum]);
+        GridHandler.ShowReleventGrid(_gridPos, _currMovement, Color.red);
+    }
+
+    public void UpdateMove(int xpos, int ypos)
+    {
+        _currMovement -= GridHandler.GetDistanceMoved(xpos, ypos);
+        if(_currMovement >= 1)
+        {
+            Move();
+        }
+        else
+        {
+
+        }
     }
 
     //Moves towards the targeted Unit

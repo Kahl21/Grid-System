@@ -72,6 +72,7 @@
     <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\Mage.cs" />
     <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\Warrior.cs" />
     <Compile Include="Assets\Scripts\CharacterScripts\WeaponScripts\Weapon.cs" />
+    <Compile Include="Assets\Scripts\GameUpdate.cs" />
     <Compile Include="Assets\Scripts\Handlers\FightHandler.cs" />
     <Compile Include="Assets\Scripts\Handlers\GridHandler.cs" />
     <Compile Include="Assets\Scripts\Handlers\HistoryHandler.cs" />
@@ -80,6 +81,7 @@
     <Compile Include="Assets\Scripts\TerrainScripts\World\GridToken.cs" />
     <Compile Include="Assets\Scripts\TerrainScripts\World\Tile.cs" />
     <Compile Include="Assets\Scripts\TerrainScripts\World\WorldGridHandler.cs" />
+    <Compile Include="Assets\Scripts\UIScripts\Battle\AbilityOptions.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\BattleUI.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\CharacterOptions.cs" />
     <Compile Include="Assets\Scripts\UIScripts\CameraFollow.cs" />

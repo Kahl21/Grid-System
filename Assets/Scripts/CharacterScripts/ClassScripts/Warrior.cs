@@ -19,6 +19,8 @@ public class Warrior : Character
 
         _myWeapon = new Axe();
 
+        _myAbilites.Add(new DoubleSlash());
+
         _mySpeed = Random.Range(5, 50);
         _myMovement = 2;
         _gridPos = Vector2.zero;

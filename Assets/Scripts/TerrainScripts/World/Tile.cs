@@ -12,8 +12,16 @@ public class Tile : MonoBehaviour
     Color _myBaseColor;
     Color _myCurrentColor;
 
-    public void Init(Color baseColor)
+    int _xPos, _yPos;
+    public int GetXPosition { get { return _xPos; } }
+    public int GetYPosition { get { return _yPos; } }
+
+    //initialize
+    public void Init(Color baseColor, int xstartpos, int ystartpos)
     {
+        _xPos = xstartpos;
+        _yPos = ystartpos;
+
         _myRend = GetComponent<MeshRenderer>();
         _myMat = _myRend.materials[0];
         _myBaseColor = _myMat.color;
@@ -24,6 +32,7 @@ public class Tile : MonoBehaviour
         _myRend.materials[0] = _myMat;
     }
 
+    //set color of the tile
     public void SetColor(Color newtileColor)
     {
         _myCurrentColor = newtileColor;
@@ -32,6 +41,7 @@ public class Tile : MonoBehaviour
         _myRend.materials[0] = _myMat;
     }
 
+    //reset tile color to base color
     public void ResetColor()
     {
         _myCurrentColor = _myBaseColor;
