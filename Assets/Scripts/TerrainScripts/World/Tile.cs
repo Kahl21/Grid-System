@@ -11,6 +11,8 @@ public class Tile : MonoBehaviour
     Material _myMat;
     Color _myBaseColor;
     Color _myCurrentColor;
+    bool _targetable;
+    public bool IsTargetable { get { return _targetable; } }
 
     int _xPos, _yPos;
     public int GetXPosition { get { return _xPos; } }
@@ -30,6 +32,7 @@ public class Tile : MonoBehaviour
 
         _myMat.color = _myBaseColor;
         _myRend.materials[0] = _myMat;
+        _targetable = false;
     }
 
     //set color of the tile
@@ -39,6 +42,7 @@ public class Tile : MonoBehaviour
 
         _myMat.color = _myCurrentColor;
         _myRend.materials[0] = _myMat;
+        _targetable = true;
     }
 
     //reset tile color to base color
@@ -48,5 +52,6 @@ public class Tile : MonoBehaviour
 
         _myMat.color = _myCurrentColor;
         _myRend.materials[0] = _myMat;
+        _targetable = false;
     }
 }

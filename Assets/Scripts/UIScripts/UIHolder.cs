@@ -88,14 +88,15 @@ public class UIHolder : MonoBehaviour
         _gridUI.gameObject.SetActive(false);
 
         //_gridCamera.Init();
-        _gridCamera.ResetCamera();
+        _gridCamera.HardResetCamera();
         
         //HistoryHandler.Init(this);
         FightHandler.Init(enemies, _playerCharacters);
         _battleUI.gameObject.SetActive(true);
         _battleUI.Init(this, _gridCamera);
         _castingForClicks = false;
-        Debug.Log("starting Player Control");
+        GridHandler.StopSelection();
+        //Debug.Log("starting Player Control");
         _inBattle = true;
     }
 

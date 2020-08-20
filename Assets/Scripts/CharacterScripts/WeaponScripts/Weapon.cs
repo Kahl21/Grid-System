@@ -82,7 +82,7 @@ public class Sword : Weapon
         _strengthMod = Random.Range(20, 41);
         _magicMod = Random.Range(0, 16);
         _accuracyMod = Random.Range(0, 31);
-        _critMod = Random.Range(-10, 11);
+        _critMod = Random.Range(0, 11);
         _attackRange = 1;
         _ranged = false;
         _damageType = (DamageType)Random.Range(0, (int)DamageType.DARK + 1);

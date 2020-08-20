@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 enum CharInfoState
 {
@@ -9,16 +10,20 @@ enum CharInfoState
     FADEOUT,
 }
 
-public class CharacterOptions : MonoBehaviour
+public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
 {
     CanvasGroup _mainPanel;
+    Button _moveButt, _attButt, _abilButt;
     AbilityOptions _abilityPanel;
+    public AbilityOptions GetAbilityPanel { get { return _abilityPanel; } }
 
     float _moveFadeSpeed = .3f;
     float _startTime;
     float _fadeCurrTime, _moveCurrTime;
 
     bool _hidden, _moving;
+    public bool IsMoving { get { return _moving; } }
+    public bool IsHidden { get { return _hidden; } }
 
     RectTransform _myRect;
     Vector3 _startPos;
@@ -48,6 +53,10 @@ public class CharacterOptions : MonoBehaviour
         _mainPanel.alpha = 0;
         _mainPanel.blocksRaycasts = false;
 
+        _moveButt = _mainPanel.transform.GetChild(0).GetComponent<Button>();
+        _attButt = _mainPanel.transform.GetChild(1).GetComponent<Button>();
+        _abilButt = _mainPanel.transform.GetChild(2).GetComponent<Button>();
+
         _abilityPanel = transform.GetChild(1).GetComponent<AbilityOptions>();
         _abilityPanel.Init(this);
     }
@@ -57,8 +66,8 @@ public class CharacterOptions : MonoBehaviour
         if(currentChar != _currCharacter)
         {
             _abilityPanel.SetSkills(currentChar);
-            _currCharacter = currentChar; 
-            
+            _currCharacter = currentChar;
+
             if (_hidden)
             {
                 ShowUI();
@@ -68,8 +77,17 @@ public class CharacterOptions : MonoBehaviour
 
     public void ShowUI()
     {
-            CalculateMove();
-            GameUpdate.Subscribe += FadeInUI;
+        CheckForDisabledButtons();
+        CalculateMove();
+        GameUpdate.Subscribe += FadeInUI;
+    }
+
+    void CheckForDisabledButtons()
+    {
+        if(_currCharacter.CurrentMovement > 0)
+        {
+            //if(_currCharacter.Strategy.)
+        }
     }
 
     public void HideUI()
@@ -85,27 +103,43 @@ public class CharacterOptions : MonoBehaviour
 
     public void BackToMenu()
     {
-        GridHandler.StopSelection();
-        ShowUI();
+        if (_currCharacter != null)
+        {
+            GridHandler.StopSelection();
+            ShowUI();
+        }
     }
 
     public void SelectMove()
     {
-        ChangeBattleInteraction(UIInteractions.MOVESELECT);
-        HideUI();
-        _currCharacter.StartMove();
+        if (_currCharacter != null)
+        {
+            ChangeBattleInteraction(UIInteractions.MOVESELECT);
+            HideUI();
+            _currCharacter.StartMove();
+
+        }
     }
 
     public void SelectAttack()
     {
-        ChangeBattleInteraction(UIInteractions.ATTACKSELECT);
+        if (_currCharacter != null)
+        {
+            ChangeBattleInteraction(UIInteractions.ATTACKSELECT);
+            HideUI();
+            _currCharacter.StartAttack();
+        } 
     }
+
 
     public void SelectAbility()
     {
-        _abilityPanel.BringUpAbilities();
-        CalculateMove();
-        GameUpdate.Subscribe += FadeOutUI;
+        if (_currCharacter != null)
+        {
+            _abilityPanel.BringUpAbilities();
+            CalculateMove();
+            GameUpdate.Subscribe += FadeOutUI;
+        }
     }
 
     public void CalculateMove()
@@ -143,7 +177,7 @@ public class CharacterOptions : MonoBehaviour
             GameUpdate.Subscribe -= FadeInUI;
         }
 
-        _mainPanel.alpha = RandomThings.Interpolate(_fadeCurrTime, 0, 1);
+        _mainPanel.alpha = RandomThings.Interpolate(_fadeCurrTime, _mainPanel.alpha, 1);
     }
 
     public void FadeOutUI()
@@ -157,7 +191,7 @@ public class CharacterOptions : MonoBehaviour
             GameUpdate.Subscribe -= FadeOutUI;
         }
 
-        _mainPanel.alpha = RandomThings.Interpolate(_fadeCurrTime, 1, 0);
+        _mainPanel.alpha = RandomThings.Interpolate(_fadeCurrTime, _mainPanel.alpha, 0);
     }
 
     public void MoveUI()
@@ -176,12 +210,12 @@ public class CharacterOptions : MonoBehaviour
 
     public void ChangeBattleInteraction(UIInteractions state)
     {
-        _uiRef.GetInsteractionState = state;
+        _uiRef.GetInteractionState = state;
     }
 
     public void ResetUIMovements()
     {
-        Debug.Log("real ui hide called");
+        //Debug.Log("real ui hide called");
         _currCharacter = null;
         _abilityPanel.ResetFading();
         HideUI();

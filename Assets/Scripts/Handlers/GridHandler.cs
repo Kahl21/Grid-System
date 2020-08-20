@@ -150,7 +150,7 @@ public static class GridHandler
     //once a character is done with their turn
     //save the grid layout as a string
     //and send it to the HistoryHandler
-    static public void FinalizeGridLayoutForTurn()
+    static public void DebugDataGrid()
     {
         string _gridDetail = "";
         for (int y = 0; y < _terrainGrid.GetLength(1); y++)
@@ -171,7 +171,7 @@ public static class GridHandler
             _gridDetail += "\n";
         }
 
-        HistoryHandler.SaveCurrentGridLayout(_gridDetail);
+        Debug.Log("Data Grid: \n" + _gridDetail);
     }
 
     //Places an enemy on the board randomly
@@ -216,6 +216,11 @@ public static class GridHandler
     public static Character RetrieveCharacter(int xpos, int ypos)
     {
         return _battleGrid[xpos, ypos];
+    }
+
+    public static GridToken RetrieveToken(Vector2 gridPos)
+    {
+        return _worldGrid.GetGridToken(gridPos);
     }
 
 // ---------------- TARGETTING FUNCTIONS FOR AI -----------------//
@@ -567,22 +572,12 @@ public static class GridHandler
     //then adds the action of moving to the HistoryHandler
     public static void MoveEnemy(Character movingCharacter, Vector2 desiredPos)
     {
-        if(movingCharacter.CurrentPosition != desiredPos)
-        {
-            HistoryHandler.AddToCurrentAction(movingCharacter.Name + " MOVES \n");
-            ClearSpace(movingCharacter.CurrentPosition);
+        //HistoryHandler.AddToCurrentAction(movingCharacter.Name + " MOVES \n");
+        ClearSpace(movingCharacter.CurrentPosition);
 
-            movingCharacter.CurrentPosition = desiredPos;
-            _battleGrid[(int)desiredPos.x, (int)desiredPos.y] = movingCharacter;
-        }
-        else if(movingCharacter.SpacesICanMove.Count == 1)
-        {
-            HistoryHandler.AddToCurrentAction(movingCharacter.Name + " CAN'T MOVE \n");
-        }
-        else
-        {
-            HistoryHandler.AddToCurrentAction(movingCharacter.Name + " STANDS IN PLACE \n");
-        }
+        movingCharacter.CurrentPosition = desiredPos;
+        _battleGrid[(int)desiredPos.x, (int)desiredPos.y] = movingCharacter;
+
     }
     
     //swap two characters to each others position
@@ -597,9 +592,9 @@ public static class GridHandler
 
         c2.CurrentPosition = temp1;
         _battleGrid[(int)temp1.x, (int)temp1.y] = c2;
-        Debug.Log(c1.CurrentPosition + " --- " + temp2);
-        Debug.Log(c2.CurrentPosition + " --- " + temp1);
-        HistoryHandler.AddToCurrentAction(c1.Name + " and " + c2.Name + " have swapped places!\n");
+        //Debug.Log(c1.CurrentPosition + " --- " + temp2);
+        //Debug.Log(c2.CurrentPosition + " --- " + temp1);
+        //HistoryHandler.AddToCurrentAction(c1.Name + " and " + c2.Name + " have swapped places!\n");
     }
 
     //randomly swaps and list of characters with one another 
@@ -705,6 +700,22 @@ public static class GridHandler
 
 // ---------------- MOVEMENT FUNCTIONS THAT MESS WITH THE MOVEGRID -----------------//
 
+    public static void DijkstraMove(Character moveableChar, Tile targetedSpace)
+    {
+        //DebugDataGrid();
+
+        List<Vector2> tilesToDestination = new List<Vector2>();
+
+        Vector2 moveSpot = new Vector2(targetedSpace.GetXPosition, targetedSpace.GetYPosition);
+
+        tilesToDestination.Add(moveableChar.CurrentPosition);
+        tilesToDestination.Add(moveSpot);
+        
+        MoveEnemy(moveableChar, moveSpot);
+
+        _worldGrid.StartCharacterMove(tilesToDestination);
+    }
+
     //resets and calculates all spaces that the character can move to
     public static List<Vector2> WhereCanIMove(Vector2 startPosition, int movement)
     {
@@ -718,7 +729,7 @@ public static class GridHandler
 
         availableSpaces.Add(startPosition);
 
-        availableSpaces = AddTilesSurroundingMe(availableSpaces);
+        availableSpaces = AddTilesInMoveRange(availableSpaces);
 
         return availableSpaces;    
     }
@@ -735,7 +746,23 @@ public static class GridHandler
 
         availableSpaces.Add(startPosition);
 
-        availableSpaces = AddTilesSurroundingMe(availableSpaces);
+        availableSpaces = AddTilesInMoveRange(availableSpaces);
+        _worldGrid.LightUpBoard(availableSpaces, panelColor);
+    }
+
+    public static void ShowReleventGrid(Vector2 startPosition, Weapon weapon, Color panelColor)
+    {
+        ResetMoveGrid();
+        List<Vector2> availableSpaces = new List<Vector2>();
+
+        int startX = (int)startPosition.x;
+        int startY = (int)startPosition.y;
+
+        _moveGrid[startX, startY] = weapon.Range;
+
+        availableSpaces.Add(startPosition);
+
+        availableSpaces = AddTilesInAttackRange(availableSpaces, weapon.IsRanged);
         _worldGrid.LightUpBoard(availableSpaces, panelColor);
     }
 
@@ -763,7 +790,7 @@ public static class GridHandler
 
     //grabs all four grid positions around a certain poition
     //returns all available positions
-    static List<Vector2> AddTilesSurroundingMe(List<Vector2> spaces)
+    static List<Vector2> AddTilesInMoveRange(List<Vector2> spaces)
     {
         for (int i = 0; i < spaces.Count; i++)
         {
@@ -785,7 +812,34 @@ public static class GridHandler
                 }
             }
         }
+        spaces.RemoveAt(0);
+        return spaces;
+    }
 
+    static List<Vector2> AddTilesInAttackRange(List<Vector2> spaces, bool IsRanged)
+    {
+        for (int i = 0; i < spaces.Count; i++)
+        {
+            int currX = (int)spaces[i].x;
+            int currY = (int)spaces[i].y;
+
+            for (int y = -1; y <= 1; y++)
+            {
+                int tileYPos = currY + y;
+                for (int x = -1; x <= 1; x++)
+                {
+                    int tileXPos = currX + x;
+                    if ((Mathf.Abs(x) + Mathf.Abs(y)) <= 1 && CanMoveFarther(currX, currY, tileXPos, tileYPos))
+                    {
+                        Vector2 newSpace = new Vector2(tileXPos, tileYPos);
+                        _moveGrid[tileXPos, tileYPos] = _moveGrid[currX, currY] - _terrainGrid[tileXPos, tileYPos].GetTerrainCost;
+                        spaces.Add(newSpace);
+                    }
+                }
+            }
+        }
+        spaces.RemoveAt(0);
+        
         return spaces;
     }
 
@@ -809,5 +863,11 @@ public static class GridHandler
         {
             return false;
         }
+    }
+
+    // ---------------- MOVEMENT FUNCTIONS THAT MESS WITH THE MOVEGRID -----------------//
+    public static void CreateDamage(Vector2 attackPos, string amountOfdamage)
+    {
+        _worldGrid.SpawnDamageUI(attackPos, amountOfdamage);
     }
 }

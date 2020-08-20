@@ -1,23 +1,32 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.WSA;
 
 public class WorldGridHandler : MonoBehaviour
 {
     GameObject _tileOBJ;
     GameObject _wallblickOBJ;
-    GameObject _characterOBJ;
+    GameObject _enemyOBJ;
+    GameObject _warriorOBJ;
+    GameObject _damageTextOBJ;
     Tile[,] _gridTiles;
     List<GameObject> _stackablefloor;
     List<Tile> _playerStartTiles;
     List<GridToken> _charactersOnField;
+    List<Tile> _currTileMoves;
 
     float _xpadding = 1.1f;
     float _zpadding = 1.1f;
 
+    float _startTime, _currTime;
+    float _moveSpeed = .5f;
+
     CameraFollow _myCamera;
     public CameraFollow GetGridCamera { get { return _myCamera; } }
+
+    BattleUI _batRef;
 
     int _holesInTheFloor = 0;
     public int NumberOfHoles { get { return _holesInTheFloor; } }
@@ -28,13 +37,16 @@ public class WorldGridHandler : MonoBehaviour
     {
         _tileOBJ = Resources.Load<GameObject>("GridObjects/Tile");
         _wallblickOBJ = Resources.Load<GameObject>("GridObjects/Wallblock");
-        _characterOBJ = Resources.Load<GameObject>("GridObjects/CharacterPrefab");
+        _enemyOBJ = Resources.Load<GameObject>("GridObjects/EnemyPrefab");
+        _warriorOBJ = Resources.Load<GameObject>("GridObjects/WarriorPrefab");
+        _damageTextOBJ = Resources.Load<GameObject>("GridObjects/DamageTextPrefab");
         _charactersOnField = new List<GridToken>(); 
         _myCamera = transform.GetChild(0).GetComponent<CameraFollow>();
         _myCamera.GetComponent<AudioListener>().enabled = false;
         _myCamera.transform.SetParent(null);
         _myCamera.Init(uiref, gameObject);
         _myCamera.FocusObject(gameObject, CameraModes.SHOWCASING);
+        _batRef = uiref;
     }
 
     //Uses GridHandler data
@@ -167,7 +179,6 @@ public class WorldGridHandler : MonoBehaviour
         {
             DeleteCharacters();
         }
-
     }
 
     //------------------CHARACTER SPAWNING---------------//
@@ -175,9 +186,20 @@ public class WorldGridHandler : MonoBehaviour
     //spawns in a single Gridtoken for a character
     public void SpawnCharacter(int xTilePos, int zTilePos)
     {
-        GameObject newSpawn = Instantiate(_characterOBJ, _gridTiles[xTilePos, zTilePos].transform.position, Quaternion.identity, null);
+        GameObject newSpawn;
+        if (GridHandler.RetrieveCharacter(xTilePos,zTilePos).Team == TeamType.PLAYER)
+        {
+            newSpawn = Instantiate(_warriorOBJ, _gridTiles[xTilePos, zTilePos].transform.position, Quaternion.identity, null);
+
+        }
+        else
+        {
+            newSpawn = Instantiate(_enemyOBJ, _gridTiles[xTilePos, zTilePos].transform.position, Quaternion.identity, null);
+
+        }
         GridToken tokenref = newSpawn.GetComponent<GridToken>();
         tokenref.GetTile = _gridTiles[xTilePos, zTilePos];
+        _gridTiles[xTilePos, zTilePos].PersonOnMe = tokenref;
         _charactersOnField.Add(tokenref);
     }
 
@@ -194,6 +216,44 @@ public class WorldGridHandler : MonoBehaviour
 
     //------------------BOARD INTERACTIONS---------------//
 
+    void DebugBoard()
+    {
+        string board = "";
+        for (int y = 0; y < _gridTiles.GetLength(1); y++)
+        {
+            for (int x = 0; x < _gridTiles.GetLength(0); x++)
+            {
+                string _currentTile;
+                if (_gridTiles[x, y].PersonOnMe == null)
+                {
+                    _currentTile = "[ ] ";
+                }
+                else
+                {
+                    _currentTile = "[O] ";
+                }
+                board += _currentTile;
+            }
+            board += "\n";
+        }
+
+        Debug.Log("World Grid: \n" + board);
+    }
+
+    public GridToken GetGridToken(Vector2 pos)
+    {
+        return _gridTiles[(int)pos.x, (int)pos.y].PersonOnMe;
+    }
+
+    public void SpawnDamageUI(Vector2 attackpos, string damage)
+    {
+        Tile spawn = _gridTiles[(int)attackpos.x, (int)attackpos.y];
+        Vector3 spawnpos = _batRef.BattleCamera.WorldToScreenPoint(spawn.transform.position);
+        GameObject newDamOBJ = Instantiate<GameObject>(_damageTextOBJ, spawnpos, _damageTextOBJ.transform.rotation, _batRef.transform);
+        newDamOBJ.GetComponent<Text>().text = damage;
+        newDamOBJ.GetComponent<DamageText>().Init();
+    }
+    
     public void LightUpBoard(List<Vector2> panelsToLightUp, Color col)
     {
         for (int i = 0; i < panelsToLightUp.Count; i++)
@@ -203,6 +263,54 @@ public class WorldGridHandler : MonoBehaviour
 
             _gridTiles[xpos, ypos].SetColor(col);
         }
+    }
+
+    public void StartCharacterMove(List<Vector2> movePositions)
+    {
+        _currTileMoves = new List<Tile>();
+
+        for (int i = 0; i < movePositions.Count; i++)
+        {
+            _currTileMoves.Add(_gridTiles[(int)movePositions[i].x, (int)movePositions[i].y]);
+        }
+
+        _currTileMoves[0].PersonOnMe.GetTile = _currTileMoves[_currTileMoves.Count - 1]; 
+        
+        _currTileMoves[_currTileMoves.Count - 1].PersonOnMe = _currTileMoves[0].PersonOnMe;
+        _currTileMoves[0].PersonOnMe = null;
+
+        _startTime = Time.time;
+        //DebugBoard();
+        GameUpdate.Subscribe += MoveGridToken;
+    }
+
+    public void MoveGridToken()
+    {
+        _currTime = (Time.time - _startTime) / _moveSpeed;
+
+        if(_currTime > 1)
+        {
+            _currTime = 1;
+
+            _currTileMoves[_currTileMoves.Count - 1].PersonOnMe.transform.position = _currTileMoves[1].transform.position;
+
+            _currTileMoves.RemoveAt(0);
+            _startTime = Time.time;
+
+            if(_currTileMoves.Count <= 1)
+            {
+                ResetPanels();
+                _batRef.CharacterDoneMoving(_currTileMoves[0].PersonOnMe);
+                GameUpdate.Subscribe -= MoveGridToken;
+                return;
+            }
+        }
+
+        //Debug.Log(_currTileMoves[0].PersonOnMe);
+       // Debug.Log(_currTileMoves[1].PersonOnMe);
+
+
+        _currTileMoves[_currTileMoves.Count-1].PersonOnMe.transform.position = RandomThings.Interpolate(_currTime, _currTileMoves[0].transform.position, _currTileMoves[1].transform.position);
     }
 
     public void ResetPanels()
@@ -215,5 +323,6 @@ public class WorldGridHandler : MonoBehaviour
             }
         }
     }
+
 
 }

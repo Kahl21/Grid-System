@@ -49,7 +49,7 @@ public static class HistoryHandler
     static public void FinalizeAction()
     {
         _actionsTaken++;
-        GridHandler.FinalizeGridLayoutForTurn();
+        //GridHandler.FinalizeGridLayoutForTurn();
         _characterInfo.Push("");
         _history.Push(_actionSentence);
         _actionSentence = " ";
@@ -60,7 +60,7 @@ public static class HistoryHandler
     static public void FinalizeAction(Character characterThatActed)
     {
         _actionsTaken++;
-        GridHandler.FinalizeGridLayoutForTurn();
+        //GridHandler.FinalizeGridLayoutForTurn();
         SaveCharacterInfo(characterThatActed);
         _history.Push(_actionSentence);
         _actionSentence = " ";

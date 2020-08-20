@@ -6,6 +6,7 @@ using UnityEngine;
 public class Character
 {
     protected CharacterStrategy _stratRef;
+    public CharacterStrategy Strategy { get { return _stratRef; } }
 
     protected TeamType _myTeam;
     public TeamType Team { get { return _myTeam; } }
@@ -45,8 +46,10 @@ public class Character
     protected int _mySpeed;
     public int Speed { get { return _mySpeed; } }
 
-    protected int _myMovement;
+
     protected int _currMovement;
+    public int CurrentMovement { get { return _currMovement; } }
+    protected int _myMovement;
     public int Movement { get { return _myMovement; } }
 
     protected bool _dead;
@@ -209,7 +212,7 @@ public class Character
 
     public void Move()
     {
-        GridHandler.ShowReleventGrid(_gridPos, _currMovement, Color.red);
+        GridHandler.ShowReleventGrid(_gridPos, _currMovement, Color.cyan);
     }
 
     public void UpdateMove(int xpos, int ypos)
@@ -270,29 +273,39 @@ public class Character
         GridHandler.MoveEnemy(this, movingTo);
     }
 
-    //checks for enemies nearby and attacks
-    //indiscriminately
-    public void Attack()
+    public void StartAttack()
     {
-        if (GridHandler.CheckForEnemyWithinRange(_gridPos, _myWeapon, _myTeam))
-        {
-            List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, _myWeapon, _myTeam);
-            if(_enemiesNearMe.Count > 0)
-            {
-                int randNum = Random.Range(0, _enemiesNearMe.Count);
-
-                FightHandler.AttackEnemy(this, _enemiesNearMe[randNum]);
-            }
-            else
-            {
-                Debug.Log("no enemy");
-            }
-        }
+        GridHandler.ShowReleventGrid(_gridPos, _myWeapon, Color.red);
     }
 
-    //attacks target if it is in range
-    //if calls base attack method
-    public void Attack(Character currTarget)
+    public void Attack(Character target)
+    {
+        FightHandler.AttackEnemy(this, target);
+    }
+
+        //checks for enemies nearby and attacks
+        //indiscriminately
+        /*public void Attack()
+        {
+            if (GridHandler.CheckForEnemyWithinRange(_gridPos, _myWeapon, _myTeam))
+            {
+                List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, _myWeapon, _myTeam);
+                if(_enemiesNearMe.Count > 0)
+                {
+                    int randNum = Random.Range(0, _enemiesNearMe.Count);
+
+                    FightHandler.AttackEnemy(this, _enemiesNearMe[randNum]);
+                }
+                else
+                {
+                    Debug.Log("no enemy");
+                }
+            }
+        }*/
+
+        //attacks target if it is in range
+        //if calls base attack method
+    /*public void Attack(Character currTarget)
     {
         if (GridHandler.CheckForEnemyWithinRange(_gridPos, _myWeapon, _myTeam, currTarget))
         {
@@ -302,7 +315,7 @@ public class Character
         {
             Attack();
         }
-    }
+    }*/
 
     //Use Skill passed to it
     //gets all enemies near and blindly choose one to hit

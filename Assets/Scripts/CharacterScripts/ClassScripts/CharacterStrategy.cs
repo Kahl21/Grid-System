@@ -150,7 +150,7 @@ public class CharacterStrategy
             }
             else if (GridHandler.CheckForEnemyWithinRange(_me.CurrentPosition, _me.HeldWeapon, _me.Team))
             {
-                _me.Attack();
+                //_me.Attack();
                 _hasAttacked = true;
             }
         }

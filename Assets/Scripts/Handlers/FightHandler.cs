@@ -235,25 +235,33 @@ public static class FightHandler
 
         //add what took place on the turn (HIT, CRIT, or MISS)
         int randNum = Random.Range(0, 100);
+
+        string damageString = "";
+        bool isCrit = false;
+
         if(attacker.Offense.Accuracy > randNum || randNum == 0)
         {
             int damage = attacker.Offense.Strength + attacker.HeldWeapon.StrengthMod;
             randNum = Random.Range(0, 100);
             if (attacker.Offense.CriticalChance > randNum || randNum == 0)
             {
-                HistoryHandler.AddToCurrentAction("and CRITS for " + Mathf.Abs(target.Defense.CalculateDamage(damage, attacker.HeldWeapon.WeaponElement, true)).ToString() + "\n");
-                target.TakeDamage(damage, attacker.HeldWeapon.WeaponElement, true);
+                isCrit = true;
+                //HistoryHandler.AddToCurrentAction("and CRITS for " + Mathf.Abs(target.Defense.CalculateDamage(damage, attacker.HeldWeapon.WeaponElement, true)).ToString() + "\n");
             }
-            else
+
+            damageString += target.Defense.CalculateDamage(damage, attacker.HeldWeapon.WeaponElement, isCrit).ToString();
+            if (isCrit)
             {
-                HistoryHandler.AddToCurrentAction("and HITS for " + Mathf.Abs(target.Defense.CalculateDamage(damage, attacker.HeldWeapon.WeaponElement, false)).ToString() + "\n");
-                target.TakeDamage(damage, attacker.HeldWeapon.WeaponElement, false);
+                damageString += "!";
             }
+            
             target.LastAttacker = attacker;
         }
         else
         {
-            HistoryHandler.AddToCurrentAction("and MISSED \n");
+            damageString = "MISS";
         }
+
+        GridHandler.CreateDamage(target.CurrentPosition, damageString);
     }
 }

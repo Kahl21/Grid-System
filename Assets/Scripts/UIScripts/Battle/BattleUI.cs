@@ -9,6 +9,7 @@ public enum UIInteractions
     NONE,
     FREE,
     ZOOMED,
+    MENUOPEN,
     MOVESELECT,
     ATTACKSELECT,
     SPELLSELECT
@@ -18,6 +19,7 @@ public class BattleUI : MonoBehaviour
 {
     UIHolder _uiRef;
 
+    Character _selectedCharacter;
     //upper UI
     Text _heightText;
     GameObject _timeline;
@@ -39,9 +41,10 @@ public class BattleUI : MonoBehaviour
     //battle menu
     CharacterOptions _optionsRef;
     CameraFollow _battleCam;
+    public Camera BattleCamera { get { return _battleCam.GetComponent<Camera>(); } }
 
     UIInteractions _interactState = UIInteractions.NONE;
-    public UIInteractions GetInsteractionState { get { return _interactState; } set { _interactState = value; } }
+    public UIInteractions GetInteractionState { get { return _interactState; } set { _interactState = value; } }
 
     //initalize
     public void Init(UIHolder ui, CameraFollow camref)
@@ -91,6 +94,9 @@ public class BattleUI : MonoBehaviour
     //Interactions with 3D space that changes depending on 
     void PlayerInteract()
     {
+        CheckingHeight();
+        CheckingCharacter();
+
         switch (_interactState)
         {
             case UIInteractions.NONE:
@@ -101,10 +107,15 @@ public class BattleUI : MonoBehaviour
             case UIInteractions.ZOOMED:
                 CheckForExitingClick();
                 break;
+            case UIInteractions.MENUOPEN:
+                UndoSelection();
+                break;
             case UIInteractions.MOVESELECT:
+                MoveInteract();
                 UndoSelection();
                 break;
             case UIInteractions.ATTACKSELECT:
+                AttackInteract();
                 UndoSelection();
                 break;
             case UIInteractions.SPELLSELECT:
@@ -115,6 +126,70 @@ public class BattleUI : MonoBehaviour
         }
     }
 
+    void CheckingHeight()
+    {
+        Ray ray = _battleCam.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+
+        //Debug.DrawRay(ray.origin, ray.direction, Color.black);
+        //Debug.Log("casting");
+        if (Physics.Raycast(ray, out hit))
+        {
+            //if hits something
+
+            //Debug.Log("hit something");
+            Collider objCollider = hit.collider;
+
+            //set height UI
+            SetHeight(objCollider.transform.position.y);
+        }
+        else
+        {
+            //Set height to nothing
+            SetHeight(0f);
+        }
+    }
+
+    void CheckingCharacter()
+    {
+        Ray ray = _battleCam.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit))
+        {
+            //if hits something
+
+            //Debug.Log("hit something");
+            Collider objCollider = hit.collider;
+
+            if (objCollider.GetComponent<Tile>())
+            {
+                //hover over tile
+                //set short character UI
+
+                //Debug.Log("tile hover");
+                Tile tile = objCollider.GetComponent<Tile>();
+
+                if (tile.PersonOnMe != null)
+                {
+                    HighlightCharacter(tile);
+                }
+            }
+            else if (objCollider.GetComponent<GridToken>())
+            {
+                //Debug.Log("character hover");
+                GridToken gt = objCollider.GetComponent<GridToken>();
+
+                HighlightCharacter(gt.GetTile);
+            }
+        }
+        else
+        {
+            //turn off character detail
+            UnHighlightCharacter();
+        }
+    }
+
     void LookingMode()
     {
         if (_battleCam.GetCameraMode == CameraModes.FREE)
@@ -122,86 +197,177 @@ public class BattleUI : MonoBehaviour
             Ray ray = _battleCam.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
 
-            //Debug.DrawRay(ray.origin, ray.direction, Color.black);
-            //Debug.Log("casting");
-            if (Physics.Raycast(ray, out hit))
+            if(_selectedCharacter == null)
             {
-                //if hits something
-
-                //Debug.Log("hit something");
-                Collider objCollider = hit.collider;
-
-                //set height UI
-                SetHeight(objCollider.transform.position.y);
-
-                if (objCollider.GetComponent<Tile>())
+                //Debug.DrawRay(ray.origin, ray.direction, Color.black);
+                //Debug.Log("casting");
+                if (Physics.Raycast(ray, out hit))
                 {
-                    //hover over tile
-                    //set short character UI
+                    //if hits something
 
-                    //Debug.Log("tile hover");
-                    Tile tile = objCollider.GetComponent<Tile>();
+                    //Debug.Log("hit something");
+                    Collider objCollider = hit.collider;
 
-                    if (tile.PersonOnMe != null)
+                    if (objCollider.GetComponent<Tile>())
                     {
-                        ActivateCharacterDetail(tile);
+                        //hover over tile
+                        //set short character UI
+
+                        //Debug.Log("tile hover");
+                        Tile tile = objCollider.GetComponent<Tile>();
+                        if (tile.PersonOnMe != null)
+                        {
+                            if (Input.GetMouseButtonDown(0))
+                            {
+                                //if left click
+                                //move camera to focus on character
+
+                                ShowActionsMenu(tile);
+                            }
+                            else if (Input.GetMouseButtonDown(1))
+                            {
+                                //if right click
+                                //focus and zoom on character
+                                //show long detail on right side
+
+                                ShowDetail(tile);
+                            }
+                        }
+                    }
+                    else if (objCollider.GetComponent<GridToken>())
+                    {
+                        //Debug.Log("character hover");
+                        GridToken gt = objCollider.GetComponent<GridToken>(); 
+                        
+                        if (Input.GetMouseButtonDown(0))
+                        {
+                            //if left click
+                            //move camera to focus on character
+
+                            ShowActionsMenu(gt.GetTile);
+                        }
+                        else if (Input.GetMouseButtonDown(1))
+                        {
+                            //if right click
+                            //focus and zoom on character
+                            //show long detail on right side
+
+                            ShowDetail(gt.GetTile);
+                        }
                     }
                 }
-                else if (objCollider.GetComponent<GridToken>())
-                {
-                    //Debug.Log("character hover");
-                    GridToken gt = objCollider.GetComponent<GridToken>();
+            }
+            
+        }
+    }
 
-                    HighlightCharacter(gt.GetTile);
-                    ActivateCharacterDetail(gt.GetTile);
+    void MoveInteract()
+    {
+        Ray ray = _battleCam.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit))
+        {
+            //if hits something
+
+            //Debug.Log("hit something");
+            Collider objCollider = hit.collider;
+
+            if (objCollider.GetComponent<Tile>())
+            {
+                //hover over tile
+                //set short character UI
+
+                Tile tile = objCollider.GetComponent<Tile>();
+                if (tile.IsTargetable && Input.GetMouseButtonDown(0))
+                {
+                    _battleCam.CameraFullStop();
+                    GridHandler.DijkstraMove(_selectedCharacter, tile);
                 }
             }
-            else
+        }
+    }
+
+    void AttackInteract()
+    {
+        Ray ray = _battleCam.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit))
+        {
+            //if hits something
+
+            //Debug.Log("hit something");
+            Collider objCollider = hit.collider;
+
+            if (objCollider.GetComponent<Tile>())
             {
-                //turn off character detail
-                //Set height to nothing
-                UnHighlightCharacter();
-                SetHeight(0f);
+                //hover over tile
+                //set short character UI
+
+                Tile tile = objCollider.GetComponent<Tile>();
+                if (tile.IsTargetable && Input.GetMouseButtonDown(0) && tile.PersonOnMe != null)
+                {
+                    _battleCam.CameraFullStop();
+                    _selectedCharacter.Attack(GridHandler.RetrieveCharacter(tile.GetXPosition,tile.GetYPosition));
+                }
             }
         }
+    }
+
+    public void CharacterDoneMoving(GridToken currChar)
+    {
+        _optionsRef.ShowUI();
+        _battleCam.FocusObject(currChar.gameObject, CameraModes.MOVING);
+        _interactState = UIInteractions.FREE;
     }
 
     //if zoomed and click, unzoom and put details off screen
     void CheckForExitingClick()
     {
-        if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
+        if (!_battleCam.IsMoving)
         {
-            _interactState = UIInteractions.NONE;
-            UnShowDetail();
+            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
+            {
+                _interactState = UIInteractions.NONE;
+                UnShowDetail();
+            }
         }
     }
 
     void UndoSelection()
     {
-        if(Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Backspace))
+        if (!_optionsRef.IsMoving)
         {
-            _interactState = UIInteractions.FREE;
-            _optionsRef.BackToMenu();
+            if (CancelButtonPressed())
+            {
+                if (!_optionsRef.IsHidden)
+                {
+                    HideActionsMenu();
+                }
+                else
+                {
+                    _battleCam.FocusObject(GridHandler.RetrieveToken(_selectedCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
+                    _interactState = UIInteractions.FREE;
+                    _optionsRef.BackToMenu();
+                    _optionsRef.GetAbilityPanel.ResetFading();
+                }
+            }
         }
     }
 
-    //checks for a click on a tile or Grid token(character rep.)
-    void ActivateCharacterDetail(Tile token)
+    bool CancelButtonPressed()
     {
-        if (Input.GetMouseButtonDown(0))
+        //Debug.Log("Button canceling check");
+        if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Backspace) || Input.GetMouseButtonDown(1))
         {
-            //if left click
-            //move camera to focus on character
-
-            ShowActionsMenu(token);
+            //Debug.Log("back button pressed");
+            return true;
         }
-        else if (Input.GetMouseButtonDown(1))
+        else
         {
-            //if right click
-            //focus and zoom on character
-            //show long detail on right side
-
-            ShowDetail(token);
+            //Debug.Log("back button not pressed");
+            return false;
         }
     }
 
@@ -329,20 +495,24 @@ public class BattleUI : MonoBehaviour
         _battleCam.FocusObject(chara.gameObject, CameraModes.MOVING);
         
         Character gridChar = GridHandler.RetrieveCharacter(chara.GetXPosition, chara.GetYPosition);
-        if(gridChar.Team == TeamType.PLAYER)
+        if(gridChar.Team == TeamType.PLAYER && !_optionsRef.IsMoving)
         {
+            _interactState = UIInteractions.MENUOPEN;
             _optionsRef.ShowUI(gridChar);
+            _selectedCharacter = gridChar;
         }
         else
         {
             HideActionsMenu();
+            _selectedCharacter = null;
         }
     }
     
     //Turn off character Interaction UI
     public void HideActionsMenu()
     {
-        Debug.Log("hide called");
+        //Debug.Log("hide called");
         _optionsRef.ResetUIMovements();
+        _selectedCharacter = null;
     }
 }

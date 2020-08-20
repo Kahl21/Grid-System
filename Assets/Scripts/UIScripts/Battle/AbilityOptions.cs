@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class AbilityOptions : MonoBehaviour
+public class AbilityOptions : MonoBehaviour, IFadeable
 {
     CanvasGroup _abilityMenu;
     GameObject _buttonPrefab;
@@ -15,13 +15,15 @@ public class AbilityOptions : MonoBehaviour
     CharacterOptions _optionsRef;
 
     List<Ability> _currAbilities;
+    List<Button> _currButtons;
 
     float _moveFadeSpeed = .3f;
     float _startTime;
     float _fadeCurrTime;
 
-    bool _hidden;
+    bool _hidden, _moving;
     public bool IsHidden { get { return _hidden; } }
+    public bool IsMoving { get { return _moving; } }
 
     public void Init(CharacterOptions opt)
     {
@@ -43,10 +45,18 @@ public class AbilityOptions : MonoBehaviour
         _descHolder.blocksRaycasts = false;
         _descImage = transform.GetChild(0).GetComponent<Image>();
         _descText = transform.GetChild(1).GetComponent<Text>();
+
+        _currAbilities = new List<Ability>();
+        _currButtons = new List<Button>();
     }
 
     public void SetSkills(Character charRef)
     {
+        if(_currAbilities.Count > 0)
+        {
+            ResetAbilityButtons();
+        }
+
         _currAbilities = charRef.Abilities;
 
         float height = _buttonPrefab.GetComponent<RectTransform>().rect.height;
@@ -61,6 +71,7 @@ public class AbilityOptions : MonoBehaviour
 
             //interesting. makes a delegate and then adds the function to it? then allows it to be used?
             newButton.GetComponent<Button>().onClick.AddListener(delegate { UseSelectedSkill(_currAbilities[newButton.transform.GetSiblingIndex() - 2]); });
+            _currButtons.Add(newButton.GetComponent<Button>());
 
             Text newtext = newButton.transform.GetChild(0).GetComponent<Text>();
             newtext.text = _currAbilities[i].Name;
@@ -74,19 +85,19 @@ public class AbilityOptions : MonoBehaviour
 
     public void BringUpAbilities()
     {
-        Debug.Log(_currAbilities.Count);
+        //Debug.Log(_currAbilities.Count);
         _startTime = Time.time;
-        GameUpdate.Subscribe += FadeMainInAbility;
+        GameUpdate.Subscribe += FadeInUI;
     }
 
     public void PreviousMenu()
     {
         _optionsRef.ShowUI();
         _startTime = Time.time;
-        GameUpdate.Subscribe += FadeMainOutAbility;
+        GameUpdate.Subscribe += FadeOutUI;
     }
 
-    public void FadeMainInAbility()
+    public void FadeInUI()
     {
         _fadeCurrTime = (Time.time - _startTime) / _moveFadeSpeed;
         if (_fadeCurrTime > 1)
@@ -94,14 +105,14 @@ public class AbilityOptions : MonoBehaviour
             _abilityMenu.alpha = 1;
             _abilityMenu.blocksRaycasts = true;
             _hidden = false;
-
-            GameUpdate.Subscribe -= FadeMainInAbility;
+            _moving = false;
+            GameUpdate.Subscribe -= FadeInUI;
         }
 
-        _abilityMenu.alpha = RandomThings.Interpolate(_fadeCurrTime, 0, 1);
+        _abilityMenu.alpha = RandomThings.Interpolate(_fadeCurrTime, _abilityMenu.alpha, 1);
     }
 
-    public void FadeMainOutAbility()
+    public void FadeOutUI()
     {
         _fadeCurrTime = (Time.time - _startTime) / _moveFadeSpeed;
         if (_fadeCurrTime > 1)
@@ -110,20 +121,32 @@ public class AbilityOptions : MonoBehaviour
             _abilityMenu.blocksRaycasts = false;
             _descHolder.alpha = 0;
             _hidden = true;
-
-            GameUpdate.Subscribe -= FadeMainOutAbility;
+            _moving = false;
+            GameUpdate.Subscribe -= FadeOutUI;
         }
 
-        _abilityMenu.alpha = RandomThings.Interpolate(_fadeCurrTime, 1, 0);
+        _abilityMenu.alpha = RandomThings.Interpolate(_fadeCurrTime, _abilityMenu.alpha, 0);
         _descHolder.alpha = RandomThings.Interpolate(_fadeCurrTime, _descHolder.alpha, 0);
     } 
 
+    void ResetAbilityButtons()
+    {
+        for (int i = 0; i < _currAbilities.Count; i++)
+        {
+            Destroy(_currButtons[i].gameObject);
+        }
+        _currButtons = new List<Button>();
+        _currAbilities = new List<Ability>();
+    }
+
     public void ResetFading()
     {
-        if (!_hidden)
+        if (!_moving)
         {
+            _moving = true;
             _startTime = Time.time;
-            GameUpdate.Subscribe += FadeMainOutAbility;
+            GameUpdate.Subscribe += FadeOutUI;
+;
         }
     }
 }

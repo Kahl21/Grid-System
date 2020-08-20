@@ -63,10 +63,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\Scripts\CharacterScripts\AbilityScripts\Ability.cs" />
-    <Compile Include="Assets\Scripts\CharacterScripts\AbilityScripts\Magic.cs" />
-    <Compile Include="Assets\Scripts\CharacterScripts\AbilityScripts\Skill.cs" />
-    <Compile Include="Assets\Scripts\CharacterScripts\AbilityScripts\SpellBook.cs" />
     <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\Character.cs" />
     <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\CharacterStrategy.cs" />
     <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\Mage.cs" />
@@ -76,14 +72,20 @@
     <Compile Include="Assets\Scripts\Handlers\FightHandler.cs" />
     <Compile Include="Assets\Scripts\Handlers\GridHandler.cs" />
     <Compile Include="Assets\Scripts\Handlers\HistoryHandler.cs" />
+    <Compile Include="Assets\Scripts\Interfaces.cs" />
     <Compile Include="Assets\Scripts\RandomThings.cs" />
     <Compile Include="Assets\Scripts\TerrainScripts\TerrainTypes\TerrainSpace.cs" />
     <Compile Include="Assets\Scripts\TerrainScripts\World\GridToken.cs" />
     <Compile Include="Assets\Scripts\TerrainScripts\World\Tile.cs" />
     <Compile Include="Assets\Scripts\TerrainScripts\World\WorldGridHandler.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\AbilityOptions.cs" />
+    <Compile Include="Assets\Scripts\UIScripts\Battle\AbilityScripts\Ability.cs" />
+    <Compile Include="Assets\Scripts\UIScripts\Battle\AbilityScripts\Magic.cs" />
+    <Compile Include="Assets\Scripts\UIScripts\Battle\AbilityScripts\Skill.cs" />
+    <Compile Include="Assets\Scripts\UIScripts\Battle\AbilityScripts\SpellBook.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\BattleUI.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\CharacterOptions.cs" />
+    <Compile Include="Assets\Scripts\UIScripts\Battle\DamageText.cs" />
     <Compile Include="Assets\Scripts\UIScripts\CameraFollow.cs" />
     <Compile Include="Assets\Scripts\UIScripts\CharacterSelect\CharacterSelectUI.cs" />
     <Compile Include="Assets\Scripts\UIScripts\CharacterSelect\DraggableCharacter.cs" />
