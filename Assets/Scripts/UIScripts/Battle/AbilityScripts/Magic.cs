@@ -173,7 +173,7 @@ public class Chaos : Magic
     public Chaos() : base()
     {
         _name = "Chaos";
-        _desc = "A spell from the god of tricks, randomly swaps places of everyone targeted and gives them all a mild headache.";
+        _desc = "A spell from the god of tricks, randomly swaps places of everyone targeted. Also gives them a mild headache in the process";
         _mpCost = 35;
         _damage = 0;
         _targetRange = 4;

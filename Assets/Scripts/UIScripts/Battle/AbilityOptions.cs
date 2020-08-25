@@ -13,6 +13,7 @@ public class AbilityOptions : MonoBehaviour, IFadeable
     Text _descText;
 
     CharacterOptions _optionsRef;
+    Character _selectedChar;
 
     List<Ability> _currAbilities;
     List<Button> _currButtons;
@@ -28,6 +29,7 @@ public class AbilityOptions : MonoBehaviour, IFadeable
     public void Init(CharacterOptions opt)
     {
         _optionsRef = opt;
+        _selectedChar = null;
         _hidden = true;
         SetUI();
     }
@@ -57,7 +59,9 @@ public class AbilityOptions : MonoBehaviour, IFadeable
             ResetAbilityButtons();
         }
 
-        _currAbilities = charRef.Abilities;
+        _selectedChar = charRef;
+
+        _currAbilities = _selectedChar.Abilities;
 
         float height = _buttonPrefab.GetComponent<RectTransform>().rect.height;
 
@@ -80,11 +84,21 @@ public class AbilityOptions : MonoBehaviour, IFadeable
 
     public void UseSelectedSkill(Ability ab)
     {
-        Debug.Log("it works");
+        GridHandler.ShowReleventGrid(_selectedChar.CurrentPosition, ab, Color.red);
+        _optionsRef.ChangeBattleInteraction(UIInteractions.SPELLSELECT);
+        HideUI();
+    }
+
+    public void HideUI()
+    {
+        _optionsRef.HideAbilities();
+        _startTime = Time.time;
+        GameUpdate.Subscribe += FadeOutUI;
     }
 
     public void BringUpAbilities()
     {
+        GridHandler.StopSelection();
         //Debug.Log(_currAbilities.Count);
         _startTime = Time.time;
         GameUpdate.Subscribe += FadeInUI;
@@ -127,7 +141,7 @@ public class AbilityOptions : MonoBehaviour, IFadeable
 
         _abilityMenu.alpha = RandomThings.Interpolate(_fadeCurrTime, _abilityMenu.alpha, 0);
         _descHolder.alpha = RandomThings.Interpolate(_fadeCurrTime, _descHolder.alpha, 0);
-    } 
+    }
 
     void ResetAbilityButtons()
     {
@@ -146,7 +160,6 @@ public class AbilityOptions : MonoBehaviour, IFadeable
             _moving = true;
             _startTime = Time.time;
             GameUpdate.Subscribe += FadeOutUI;
-;
         }
     }
 }

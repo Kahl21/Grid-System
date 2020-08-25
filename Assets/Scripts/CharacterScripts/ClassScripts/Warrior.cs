@@ -23,6 +23,7 @@ public class Warrior : Character
 
         _mySpeed = Random.Range(5, 50);
         _myMovement = 2;
+        _currMovement = _myMovement;
         _gridPos = Vector2.zero;
         _dead = false;
     }
@@ -79,6 +80,7 @@ public class Warrior : Character
 
         _mySpeed = Random.Range(1, 101);
         _myMovement = Random.Range(1, 3);
+        _currMovement = _myMovement;
         _gridPos = startPos;
         _dead = false;
     }

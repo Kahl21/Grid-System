@@ -68,6 +68,11 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
             _abilityPanel.SetSkills(currentChar);
             _currCharacter = currentChar;
 
+            if(_currCharacter.CurrentMovement == _currCharacter.Movement)
+            {
+                _currCharacter.StartTurn();
+            }
+
             if (_hidden)
             {
                 ShowUI();
@@ -86,7 +91,22 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
     {
         if(_currCharacter.CurrentMovement > 0)
         {
-            //if(_currCharacter.Strategy.)
+            _moveButt.interactable = true;
+        }
+        else
+        {
+            _moveButt.interactable = false;
+        }
+
+        if(!_currCharacter.Strategy.HasAttacked)
+        {
+            _attButt.interactable = true;
+            _abilButt.interactable = true;
+        }
+        else
+        {
+            _attButt.interactable = false;
+            _abilButt.interactable = false;
         }
     }
 
@@ -116,7 +136,7 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
         {
             ChangeBattleInteraction(UIInteractions.MOVESELECT);
             HideUI();
-            _currCharacter.StartMove();
+            _currCharacter.Move();
 
         }
     }
@@ -140,6 +160,17 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
             CalculateMove();
             GameUpdate.Subscribe += FadeOutUI;
         }
+    }
+
+    public void ShowOnlyAbilites()
+    {
+        CalculateMove();
+        _abilityPanel.BringUpAbilities();
+    }
+
+    public void HideAbilities()
+    {
+        CalculateMove();
     }
 
     public void CalculateMove()

@@ -178,7 +178,13 @@ public static class GridHandler
     public static void PlaceEnemyOnBoard(Character newCharacter)
     {
         _battleGrid[(int)newCharacter.CurrentPosition.x, (int)newCharacter.CurrentPosition.y] = newCharacter;
-        _worldGrid.SpawnCharacter((int)newCharacter.CurrentPosition.x, (int)newCharacter.CurrentPosition.y);
+        _worldGrid.SpawnEnemy((int)newCharacter.CurrentPosition.x, (int)newCharacter.CurrentPosition.y);
+    }
+
+    public static void PlacePlayerOnBoard(Character newCharacter)
+    {
+        _worldGrid.SpawnPlayer(newCharacter);
+        _battleGrid[(int)newCharacter.CurrentPosition.x, (int)newCharacter.CurrentPosition.y] = newCharacter;
     }
 
     //returns a spawn position for enemies or players
@@ -700,6 +706,29 @@ public static class GridHandler
 
 // ---------------- MOVEMENT FUNCTIONS THAT MESS WITH THE MOVEGRID -----------------//
 
+    public static void DebugMoveGrid()
+    {
+        string _gridDetail = "";
+        for (int y = 0; y < _terrainGrid.GetLength(1); y++)
+        {
+            for (int x = 0; x < _terrainGrid.GetLength(0); x++)
+            {
+                string _currentTile;
+                if (_moveGrid[x, y] == -1)
+                {
+                    _currentTile = "[ ] ";
+                }
+                else
+                {
+                    _currentTile = "[" + _moveGrid[x, y] + "] ";
+                }
+                _gridDetail += _currentTile;
+            }
+            _gridDetail += "\n";
+        }
+
+        Debug.Log("Data Grid: \n" + _gridDetail);
+    }
     public static void DijkstraMove(Character moveableChar, Tile targetedSpace)
     {
         //DebugDataGrid();
@@ -736,17 +765,23 @@ public static class GridHandler
 
     public static void ShowReleventGrid(Vector2 startPosition, int movement, Color panelColor)
     {
+
         ResetMoveGrid();
         List<Vector2> availableSpaces = new List<Vector2>();
 
         int startX = (int)startPosition.x;
         int startY = (int)startPosition.y;
 
+
         _moveGrid[startX, startY] = movement;
 
         availableSpaces.Add(startPosition);
 
         availableSpaces = AddTilesInMoveRange(availableSpaces);
+
+        //Debug.Log(movement);
+        //DebugMoveGrid();
+
         _worldGrid.LightUpBoard(availableSpaces, panelColor);
     }
 
@@ -762,7 +797,28 @@ public static class GridHandler
 
         availableSpaces.Add(startPosition);
 
-        availableSpaces = AddTilesInAttackRange(availableSpaces, weapon.IsRanged);
+        availableSpaces = AddTilesInAttackRange(availableSpaces);
+        _worldGrid.LightUpBoard(availableSpaces, panelColor);
+    }
+
+    public static void ShowReleventGrid(Vector2 startPosition, Ability ability, Color panelColor)
+    {
+        ResetMoveGrid();
+        List<Vector2> availableSpaces = new List<Vector2>();
+
+        int startX = (int)startPosition.x;
+        int startY = (int)startPosition.y;
+
+        _moveGrid[startX, startY] = ability.TargetRange;
+
+        availableSpaces.Add(startPosition);
+
+        availableSpaces = AddTilesInAbilityZone(availableSpaces);
+
+        if(ability.Shape == DamageShape.LINE || ability.Shape == DamageShape.CONE)
+        {
+            availableSpaces.RemoveAt(0);
+        }
         _worldGrid.LightUpBoard(availableSpaces, panelColor);
     }
 
@@ -816,7 +872,7 @@ public static class GridHandler
         return spaces;
     }
 
-    static List<Vector2> AddTilesInAttackRange(List<Vector2> spaces, bool IsRanged)
+    static List<Vector2> AddTilesInAttackRange(List<Vector2> spaces)
     {
         for (int i = 0; i < spaces.Count; i++)
         {
@@ -829,7 +885,7 @@ public static class GridHandler
                 for (int x = -1; x <= 1; x++)
                 {
                     int tileXPos = currX + x;
-                    if ((Mathf.Abs(x) + Mathf.Abs(y)) <= 1 && CanMoveFarther(currX, currY, tileXPos, tileYPos))
+                    if ((Mathf.Abs(x) + Mathf.Abs(y)) <= 1 && IsInAttackRange(currX, currY, tileXPos, tileYPos))
                     {
                         Vector2 newSpace = new Vector2(tileXPos, tileYPos);
                         _moveGrid[tileXPos, tileYPos] = _moveGrid[currX, currY] - _terrainGrid[tileXPos, tileYPos].GetTerrainCost;
@@ -843,6 +899,32 @@ public static class GridHandler
         return spaces;
     }
 
+    static List<Vector2> AddTilesInAbilityZone(List<Vector2> spaces)
+    {
+        for (int i = 0; i < spaces.Count; i++)
+        {
+            int currX = (int)spaces[i].x;
+            int currY = (int)spaces[i].y;
+
+            for (int y = -1; y <= 1; y++)
+            {
+                int tileYPos = currY + y;
+                for (int x = -1; x <= 1; x++)
+                {
+                    int tileXPos = currX + x;
+                    if ((Mathf.Abs(x) + Mathf.Abs(y)) <= 1 && IsInAttackRange (currX, currY, tileXPos, tileYPos))
+                    {
+                        Vector2 newSpace = new Vector2(tileXPos, tileYPos);
+                        _moveGrid[tileXPos, tileYPos] = _moveGrid[currX, currY] - _terrainGrid[tileXPos, tileYPos].GetTerrainCost;
+                        spaces.Add(newSpace);
+                    }
+                }
+            }
+        }
+
+        return spaces;
+    }
+
     //checks to see if the player can move any farther 
     //references the movement tracking grid to see if the player has any more movement
     //returns if they can or not(bool)
@@ -851,6 +933,25 @@ public static class GridHandler
         try
         {
             if ((_moveGrid[xPos, yPos] - _terrainGrid[xCheck, yCheck].GetTerrainCost) >= 0 && _moveGrid[xCheck,yCheck] == -1)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    static bool IsInAttackRange(int xPos, int yPos, int xCheck, int yCheck)
+    {
+        try
+        {
+            if ((_moveGrid[xPos, yPos] - 1 >= 0 && _moveGrid[xCheck, yCheck] == -1))
             {
                 return true;
             }

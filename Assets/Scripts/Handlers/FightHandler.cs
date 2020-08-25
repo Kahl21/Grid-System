@@ -116,7 +116,7 @@ public static class FightHandler
                     break;
             }
 
-            GridHandler.PlaceEnemyOnBoard(newCharacter);
+            GridHandler.PlacePlayerOnBoard(newCharacter);
             _spawnedCharacters.Add(newCharacter);
         }
     }
@@ -156,7 +156,7 @@ public static class FightHandler
     {
             if(_currentEnemyNum < _spawnedCharacters.Count)
             {
-                _spawnedCharacters[_currentEnemyNum].TakeAction();
+                _spawnedCharacters[_currentEnemyNum].StartTurn();
                 HistoryHandler.FinalizeAction(_spawnedCharacters[_currentEnemyNum]);
                 
                 _currentEnemyNum++;
@@ -243,7 +243,7 @@ public static class FightHandler
         {
             int damage = attacker.Offense.Strength + attacker.HeldWeapon.StrengthMod;
             randNum = Random.Range(0, 100);
-            if (attacker.Offense.CriticalChance > randNum || randNum == 0)
+            if (attacker.Offense.CriticalChance > randNum)
             {
                 isCrit = true;
                 //HistoryHandler.AddToCurrentAction("and CRITS for " + Mathf.Abs(target.Defense.CalculateDamage(damage, attacker.HeldWeapon.WeaponElement, true)).ToString() + "\n");
@@ -254,14 +254,14 @@ public static class FightHandler
             {
                 damageString += "!";
             }
-            
+
+            target.TakeDamage(damage, attacker.HeldWeapon.WeaponElement, isCrit);
             target.LastAttacker = attacker;
         }
         else
         {
             damageString = "MISS";
         }
-
         GridHandler.CreateDamage(target.CurrentPosition, damageString);
     }
 }

@@ -73,6 +73,7 @@ public class GridSetupUI : MonoBehaviour
         _gtChoice = (GridTraits)_gridTraitsDD.value;
 
         GridHandler.CreateNewGrid(_gsChoice, _gtChoice, _elevation);
+        CheckGridPopulationMath();
     }
 
     //truncates all Y values for the grid spaces to .5 (0, .5, 1, 1.5, etc)

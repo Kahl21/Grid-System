@@ -194,20 +194,15 @@ public class Character
 
     //Main method called
     //starts this units turn
-    public void TakeAction()
+    public void StartTurn()
     {
         if(!_dead)
         {
-            _stratRef.WhatDo();
+            //_stratRef.WhatDo();
+            _currMovement = _myMovement;
+            _stratRef.HasAttacked = false;
             //Debug.Log("Action Taken");
         }
-    }
-
-    //Moves unit randomly to any space it can travel
-    public void StartMove()
-    {
-        _currMovement = _myMovement;
-        Move();
     }
 
     public void Move()
@@ -215,16 +210,18 @@ public class Character
         GridHandler.ShowReleventGrid(_gridPos, _currMovement, Color.cyan);
     }
 
-    public void UpdateMove(int xpos, int ypos)
+    public bool CheckForMoreMove(int xpos, int ypos)
     {
-        _currMovement -= GridHandler.GetDistanceMoved(xpos, ypos);
+        int moveDiff = GridHandler.GetDistanceMoved(xpos, ypos) - _currMovement;
+        _currMovement += moveDiff;
         if(_currMovement >= 1)
         {
             Move();
+            return false;
         }
         else
         {
-
+            return true;
         }
     }
 
@@ -374,7 +371,7 @@ public class Character
 
         if(_myHealth < 0)
         {
-            HistoryHandler.DeclareDeath(this);
+            //HistoryHandler.DeclareDeath(this);
             _dead = true;
         }
     }
@@ -420,26 +417,27 @@ public struct DefenseStats
     public int CalculateDamage(int damage, DamageType damageType, bool crit)
     {
         int actualDamage = 0;
+        float currResistance = 0;
 
         switch (damageType)
         {
             case DamageType.PHYSICAL:
-                actualDamage = BaseDefense - (damage - (damage * (PhysRes / 100)));
+                currResistance = PhysRes;
                 break;
             case DamageType.FIRE:
-                actualDamage = BaseDefense - (damage - (damage * (FireRes / 100)));
+                currResistance = FireRes;
                 break;
             case DamageType.ICE:
-                actualDamage = BaseDefense - (damage - (damage * (IceRes / 100)));
+                currResistance = IceRes;
                 break;
             case DamageType.THUNDER:
-                actualDamage = BaseDefense - (damage - (damage * (ThunderRes / 100)));
+                currResistance = ThunderRes;
                 break;
             case DamageType.LIGHT:
-                actualDamage = BaseDefense - (damage - (damage * (LightRes / 100)));
+                currResistance = LightRes;
                 break;
             case DamageType.DARK:
-                actualDamage = BaseDefense - (damage - (damage * (DarkRes / 100)));
+                currResistance = DarkRes;
                 break;
             case DamageType.HEALING:
                 actualDamage = damage;
@@ -448,7 +446,11 @@ public struct DefenseStats
                 break;
         }
 
-        if(actualDamage > 0 && damageType != DamageType.HEALING)
+        actualDamage = (int)(BaseDefense - (damage * (1 - (currResistance / 100))));
+        //DebugDamage(damage, currResistance);
+        //Debug.Log(actualDamage);
+
+        if (actualDamage > 0 && damageType != DamageType.HEALING)
         {
             actualDamage = 0;
         }
@@ -461,5 +463,14 @@ public struct DefenseStats
         //Debug.Log(actualDamage);
 
         return actualDamage;
+    }
+
+    void DebugDamage(int dam, float res)
+    {
+        Debug.Log(BaseDefense.ToString() + " - (" + dam + " * (1 - (" + res + " / 100)))");
+        Debug.Log(BaseDefense.ToString() + " - (" + dam + " * (1 - " + (res / 100).ToString() + "))");
+        Debug.Log(BaseDefense.ToString() + " - (" + dam + " * " + (1 - (res / 100)).ToString() + ")");
+        Debug.Log(BaseDefense.ToString() + " - " + (dam * (1 - (res / 100))).ToString());
+        Debug.Log((BaseDefense - (dam * (1 - (res / 100)))).ToString());
     }
 }

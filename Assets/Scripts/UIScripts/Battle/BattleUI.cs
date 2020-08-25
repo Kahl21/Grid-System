@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEditor;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 public enum UIInteractions
@@ -10,9 +7,11 @@ public enum UIInteractions
     FREE,
     ZOOMED,
     MENUOPEN,
+    ABILITYOPEN,
     MOVESELECT,
     ATTACKSELECT,
-    SPELLSELECT
+    SPELLSELECT,
+    SPELLUSE
 }
 
 public class BattleUI : MonoBehaviour
@@ -95,7 +94,8 @@ public class BattleUI : MonoBehaviour
     void PlayerInteract()
     {
         CheckingHeight();
-        CheckingCharacter();
+        CheckingCharacter(); 
+        UndoSelection();
 
         switch (_interactState)
         {
@@ -112,14 +112,15 @@ public class BattleUI : MonoBehaviour
                 break;
             case UIInteractions.MOVESELECT:
                 MoveInteract();
-                UndoSelection();
                 break;
             case UIInteractions.ATTACKSELECT:
                 AttackInteract();
-                UndoSelection();
                 break;
             case UIInteractions.SPELLSELECT:
-                UndoSelection();
+                AbilityInteract();
+                break;
+            case UIInteractions.SPELLUSE:
+                FinalizeAbility();
                 break;
             default:
                 break;
@@ -192,7 +193,7 @@ public class BattleUI : MonoBehaviour
 
     void LookingMode()
     {
-        if (_battleCam.GetCameraMode == CameraModes.FREE)
+        if (_battleCam.GetCameraMode == CameraModes.FREE && !_optionsRef.IsMoving)
         {
             Ray ray = _battleCam.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
             RaycastHit hit;
@@ -305,21 +306,56 @@ public class BattleUI : MonoBehaviour
                 //hover over tile
                 //set short character UI
 
-                Tile tile = objCollider.GetComponent<Tile>();
-                if (tile.IsTargetable && Input.GetMouseButtonDown(0) && tile.PersonOnMe != null)
-                {
-                    _battleCam.CameraFullStop();
-                    _selectedCharacter.Attack(GridHandler.RetrieveCharacter(tile.GetXPosition,tile.GetYPosition));
-                }
+                InitiateAttack(objCollider.GetComponent<Tile>());
+                
+            }
+            else if (objCollider.GetComponent<GridToken>())
+            {
+                InitiateAttack(objCollider.GetComponent<GridToken>().GetTile);
             }
         }
     }
 
+    void InitiateAttack(Tile tile)
+    {
+        if (tile.IsTargetable && Input.GetMouseButtonDown(0) && tile.PersonOnMe != null)
+        {
+            _battleCam.CameraFullStop();
+            _selectedCharacter.Attack(GridHandler.RetrieveCharacter(tile.GetXPosition, tile.GetYPosition));
+        }
+    }
+
+    void AbilityInteract()
+    {
+
+    }
+
+    void FinalizeAbility()
+    {
+
+    }
+
     public void CharacterDoneMoving(GridToken currChar)
     {
-        _optionsRef.ShowUI();
+        if (!_selectedCharacter.CheckForMoreMove(currChar.GetTile.GetXPosition, currChar.GetTile.GetYPosition))
+        {
+            _interactState = UIInteractions.MOVESELECT;
+        }
+        else
+        {
+            _optionsRef.ShowUI();
+            _interactState = UIInteractions.MENUOPEN;
+        }
+
         _battleCam.FocusObject(currChar.gameObject, CameraModes.MOVING);
-        _interactState = UIInteractions.FREE;
+    }
+
+    public void CharacterDoneAttacking()
+    {
+        _optionsRef.ShowUI();
+        _interactState = UIInteractions.MENUOPEN;
+        _selectedCharacter.Strategy.HasAttacked = true;
+        _battleCam.FocusObject(GridHandler.RetrieveToken(_selectedCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
     }
 
     //if zoomed and click, unzoom and put details off screen
@@ -341,16 +377,40 @@ public class BattleUI : MonoBehaviour
         {
             if (CancelButtonPressed())
             {
-                if (!_optionsRef.IsHidden)
+                switch (_interactState)
                 {
-                    HideActionsMenu();
-                }
-                else
-                {
-                    _battleCam.FocusObject(GridHandler.RetrieveToken(_selectedCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
-                    _interactState = UIInteractions.FREE;
-                    _optionsRef.BackToMenu();
-                    _optionsRef.GetAbilityPanel.ResetFading();
+                    case UIInteractions.MENUOPEN:
+                        if (!_optionsRef.IsHidden)
+                        {
+                            HideActionsMenu();
+                        }
+                        else
+                        {
+                            _optionsRef.BackToMenu();
+                            _optionsRef.GetAbilityPanel.ResetFading();
+                        }
+                        break;
+                    case UIInteractions.MOVESELECT:
+                        _battleCam.FocusObject(GridHandler.RetrieveToken(_selectedCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
+                        _interactState = UIInteractions.MENUOPEN;
+                        _optionsRef.BackToMenu();
+                        _optionsRef.GetAbilityPanel.ResetFading();
+                        break;
+                    case UIInteractions.ATTACKSELECT:
+                        _battleCam.FocusObject(GridHandler.RetrieveToken(_selectedCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
+                        _interactState = UIInteractions.MENUOPEN;
+                        _optionsRef.BackToMenu();
+                        _optionsRef.GetAbilityPanel.ResetFading();
+                        break;
+                    case UIInteractions.SPELLSELECT:
+                        _battleCam.FocusObject(GridHandler.RetrieveToken(_selectedCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
+                        _interactState = UIInteractions.MENUOPEN;
+                        _optionsRef.ShowOnlyAbilites();
+                        break;
+                    case UIInteractions.SPELLUSE:
+                        break;
+                    default:
+                        break;
                 }
             }
         }
@@ -377,16 +437,13 @@ public class BattleUI : MonoBehaviour
         //get character info from GridHandler by sending GridToken Position
         Character highlightedCharacter = GridHandler.RetrieveCharacter(highlightedToken.GetXPosition, highlightedToken.GetYPosition); ;
 
-        if (!_shortHolder.activeInHierarchy)
-        {
-            //turn on short detail if it isnt on 
-            //plug character info into UI
-            _shortPort.sprite = highlightedCharacter.GetSprite;
-            _shortHealth.text = highlightedCharacter.CurrHealth.ToString() + "/" + highlightedCharacter.MaxHealth.ToString();
-            _shortMana.text = highlightedCharacter.CurrMana.ToString() + "/" + highlightedCharacter.MaxMana.ToString();
+        //turn on short detail if it isnt on 
+        //plug character info into UI
+        _shortPort.sprite = highlightedCharacter.GetSprite;
+        _shortHealth.text = highlightedCharacter.CurrHealth.ToString() + "/" + highlightedCharacter.MaxHealth.ToString();
+        _shortMana.text = highlightedCharacter.CurrMana.ToString() + "/" + highlightedCharacter.MaxMana.ToString();
 
-            _shortHolder.SetActive(true);
-        }
+        _shortHolder.SetActive(true);
     }
 
     //Turn off short character detail if it is active
@@ -513,6 +570,7 @@ public class BattleUI : MonoBehaviour
     {
         //Debug.Log("hide called");
         _optionsRef.ResetUIMovements();
+        _interactState = UIInteractions.FREE;
         _selectedCharacter = null;
     }
 }

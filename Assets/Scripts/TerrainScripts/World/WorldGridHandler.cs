@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -184,22 +185,37 @@ public class WorldGridHandler : MonoBehaviour
     //------------------CHARACTER SPAWNING---------------//
 
     //spawns in a single Gridtoken for a character
-    public void SpawnCharacter(int xTilePos, int zTilePos)
+    public void SpawnEnemy(int xTilePos, int zTilePos)
     {
         GameObject newSpawn;
-        if (GridHandler.RetrieveCharacter(xTilePos,zTilePos).Team == TeamType.PLAYER)
-        {
-            newSpawn = Instantiate(_warriorOBJ, _gridTiles[xTilePos, zTilePos].transform.position, Quaternion.identity, null);
+        
+        newSpawn = Instantiate(_enemyOBJ, _gridTiles[xTilePos, zTilePos].transform.position, Quaternion.identity, null);
 
-        }
-        else
-        {
-            newSpawn = Instantiate(_enemyOBJ, _gridTiles[xTilePos, zTilePos].transform.position, Quaternion.identity, null);
-
-        }
         GridToken tokenref = newSpawn.GetComponent<GridToken>();
         tokenref.GetTile = _gridTiles[xTilePos, zTilePos];
         _gridTiles[xTilePos, zTilePos].PersonOnMe = tokenref;
+        _charactersOnField.Add(tokenref);
+    }
+
+    public void SpawnPlayer(Character newPlayer)
+    {
+        GameObject newSpawn;
+        
+        if (newPlayer.GetType() == typeof(Warrior))
+        {
+            newSpawn = Instantiate(_warriorOBJ, _gridTiles[_playerStartTiles[0].GetXPosition, _playerStartTiles[0].GetYPosition].transform.position, Quaternion.identity, null);
+        }
+        else
+        {
+            Debug.Log("didnt work");
+            newSpawn = Instantiate(_warriorOBJ, _gridTiles[_playerStartTiles[0].GetXPosition, _playerStartTiles[0].GetYPosition].transform.position, Quaternion.identity, null);
+        }
+
+        GridToken tokenref = newSpawn.GetComponent<GridToken>();
+        tokenref.GetTile = _gridTiles[_playerStartTiles[0].GetXPosition, _playerStartTiles[0].GetYPosition];
+        _gridTiles[_playerStartTiles[0].GetXPosition, _playerStartTiles[0].GetYPosition].PersonOnMe = tokenref;
+        newPlayer.CurrentPosition = new Vector2(_playerStartTiles[0].GetXPosition, _playerStartTiles[0].GetYPosition);
+        _playerStartTiles.RemoveAt(0);
         _charactersOnField.Add(tokenref);
     }
 
@@ -252,6 +268,8 @@ public class WorldGridHandler : MonoBehaviour
         GameObject newDamOBJ = Instantiate<GameObject>(_damageTextOBJ, spawnpos, _damageTextOBJ.transform.rotation, _batRef.transform);
         newDamOBJ.GetComponent<Text>().text = damage;
         newDamOBJ.GetComponent<DamageText>().Init();
+        ResetPanels();
+        _batRef.CharacterDoneAttacking();
     }
     
     public void LightUpBoard(List<Vector2> panelsToLightUp, Color col)

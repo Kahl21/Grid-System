@@ -23,6 +23,8 @@ public class CharacterStrategy
 
     BattleStrats _myStrat;
     bool _hasAttacked, _hasMoved;
+    public bool HasAttacked { get { return _hasAttacked; } set { _hasAttacked = value; } }
+    public bool HasMoved { get { return _hasMoved; } set { _hasMoved = value; } }
     int _abilitesICanRemeber;
 
     Character _currTarget;
