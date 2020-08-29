@@ -18,8 +18,8 @@ public class WorldGridHandler : MonoBehaviour
     List<GridToken> _charactersOnField;
     List<Tile> _currTileMoves;
 
-    float _xpadding = 1.1f;
-    float _zpadding = 1.1f;
+    float _xpadding = 1f;
+    float _zpadding = 1f;
 
     float _startTime, _currTime;
     float _moveSpeed = .5f;
@@ -259,6 +259,11 @@ public class WorldGridHandler : MonoBehaviour
     public GridToken GetGridToken(Vector2 pos)
     {
         return _gridTiles[(int)pos.x, (int)pos.y].PersonOnMe;
+    }
+
+    public Tile GetTile(Vector2 pos)
+    {
+        return _gridTiles[(int)pos.x, (int)pos.y];
     }
 
     public void SpawnDamageUI(Vector2 attackpos, string damage)

@@ -12,5 +12,9 @@ public interface IFadeable
 
 public interface IMoveable
 {
+    void CalculateMove();
+
+    void StartMove();
+
     void MoveUI();
 }

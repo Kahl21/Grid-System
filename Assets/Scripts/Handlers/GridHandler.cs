@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor.PackageManager;
 using UnityEngine;
 
 //enum for grid size
@@ -21,6 +22,13 @@ public enum GridTraits
     MARSH,
     HOLES,
     RANDOM
+}
+
+public enum Actions
+{
+    MOVE,
+    ATTACK,
+    ABILITY
 }
 
 public static class GridHandler
@@ -229,6 +237,11 @@ public static class GridHandler
         return _worldGrid.GetGridToken(gridPos);
     }
 
+    public static Tile RetrieveTile(Vector2 tilePos)
+    {
+        return _worldGrid.GetTile(tilePos);
+    }
+
 // ---------------- TARGETTING FUNCTIONS FOR AI -----------------//
 
     //called if the character is attacking indescriminantly against the enemy team
@@ -364,7 +377,7 @@ public static class GridHandler
     //called when a character is trying to use an ability on someone
     //Checks for what type of spell is it and gets the zone it covers
     //returns all characters that will get hit 
-    public static List<Character> GetTargetsInSplashZone(Vector2 targetPos, Vector2 castPos, Ability ability)
+    public static List<Character> GetTargetsInSplashZone(Vector2 targetPos, Ability ability)
     {
         List<Character> enemiesInRange = new List<Character>();
 
@@ -394,8 +407,6 @@ public static class GridHandler
                 }
                 break;
             case DamageShape.SELFAREA:
-                currX = (int)castPos.x;
-                currY = (int)castPos.y;
 
                 for (int y = -ability.SplashRange; y < ability.SplashRange; y++)
                 {
@@ -556,6 +567,52 @@ public static class GridHandler
         return false;
     }
 
+    public static bool CheckForEnemyWithinSpashZone(Vector2 targetPos, int splashZone)
+    {
+
+        int currX = (int)targetPos.x;
+        int currY = (int)targetPos.y;
+
+        if (splashZone > 0)
+        {
+
+            for (int y = -splashZone; y < splashZone; y++)
+            {
+                int tileYPos = currY + y;
+                for (int x = -splashZone; x < splashZone; x++)
+                {
+                    int tileXPos = currX + x;
+                    Vector2 checkedPos = new Vector2(tileXPos, tileYPos);
+
+                    //Debug.Log((Mathf.Abs(x) + Mathf.Abs(y)) + " --> " + splashZone);
+                    if ((Mathf.Abs(x) + Mathf.Abs(y)) <= splashZone && IsSpaceOccupied(tileXPos, tileYPos))
+                    {
+                        if (tileXPos >= 0 && tileYPos >= 0 && targetPos != checkedPos)
+                        {
+                            //Debug.Log("true");
+                            return true;
+                        }
+                    }
+                }
+            }
+            //Debug.Log("false");
+            return false;
+        }
+        else
+        {
+            if (currX >= 0 && currY >= 0)
+            {
+                if (IsSpaceOccupied(currX, currY))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+    }
+
     //removes any Characters that are on the same team as the Character attacking
     static List<Character> RemoveTeamMembers(List<Character> enemyList, TeamType team)
     {
@@ -635,11 +692,13 @@ public static class GridHandler
             }
             else
             {
+                
                 return false;
             }
         }
         catch
         {
+            
             return false;
         }
             
@@ -654,11 +713,13 @@ public static class GridHandler
             }
             else
             {
+                
                 return false;
             }
         }
         catch
         {
+            
             return false;
         }
     }
@@ -758,67 +819,31 @@ public static class GridHandler
 
         availableSpaces.Add(startPosition);
 
-        availableSpaces = AddTilesInMoveRange(availableSpaces);
+        availableSpaces = AddTilesInRange(availableSpaces, Actions.MOVE);
 
         return availableSpaces;    
     }
 
-    public static void ShowReleventGrid(Vector2 startPosition, int movement, Color panelColor)
+    public static void ShowReleventGrid(Vector2 startPosition, int range, Color panelColor, Actions whatdoing)
     {
-
         ResetMoveGrid();
+        _worldGrid.ResetPanels();
         List<Vector2> availableSpaces = new List<Vector2>();
 
         int startX = (int)startPosition.x;
         int startY = (int)startPosition.y;
 
 
-        _moveGrid[startX, startY] = movement;
+        _moveGrid[startX, startY] = range;
 
         availableSpaces.Add(startPosition);
 
-        availableSpaces = AddTilesInMoveRange(availableSpaces);
+        availableSpaces = AddTilesInRange(availableSpaces, whatdoing);
+                
 
         //Debug.Log(movement);
         //DebugMoveGrid();
 
-        _worldGrid.LightUpBoard(availableSpaces, panelColor);
-    }
-
-    public static void ShowReleventGrid(Vector2 startPosition, Weapon weapon, Color panelColor)
-    {
-        ResetMoveGrid();
-        List<Vector2> availableSpaces = new List<Vector2>();
-
-        int startX = (int)startPosition.x;
-        int startY = (int)startPosition.y;
-
-        _moveGrid[startX, startY] = weapon.Range;
-
-        availableSpaces.Add(startPosition);
-
-        availableSpaces = AddTilesInAttackRange(availableSpaces);
-        _worldGrid.LightUpBoard(availableSpaces, panelColor);
-    }
-
-    public static void ShowReleventGrid(Vector2 startPosition, Ability ability, Color panelColor)
-    {
-        ResetMoveGrid();
-        List<Vector2> availableSpaces = new List<Vector2>();
-
-        int startX = (int)startPosition.x;
-        int startY = (int)startPosition.y;
-
-        _moveGrid[startX, startY] = ability.TargetRange;
-
-        availableSpaces.Add(startPosition);
-
-        availableSpaces = AddTilesInAbilityZone(availableSpaces);
-
-        if(ability.Shape == DamageShape.LINE || ability.Shape == DamageShape.CONE)
-        {
-            availableSpaces.RemoveAt(0);
-        }
         _worldGrid.LightUpBoard(availableSpaces, panelColor);
     }
 
@@ -846,7 +871,7 @@ public static class GridHandler
 
     //grabs all four grid positions around a certain poition
     //returns all available positions
-    static List<Vector2> AddTilesInMoveRange(List<Vector2> spaces)
+    static List<Vector2> AddTilesInRange(List<Vector2> spaces, Actions action)
     {
         for (int i = 0; i < spaces.Count; i++)
         {
@@ -859,72 +884,37 @@ public static class GridHandler
                 for (int x = -1; x <= 1; x++)
                 {
                     int tileXPos = currX + x;
-                    if ((Mathf.Abs(x) + Mathf.Abs(y)) <= 1 && CanMoveFarther(currX, currY, tileXPos, tileYPos) && !IsSpaceOccupied(tileXPos, tileYPos)) 
+                    if (action == Actions.MOVE)
                     {
-                        Vector2 newSpace = new Vector2(tileXPos, tileYPos);
-                        _moveGrid[tileXPos, tileYPos] = _moveGrid[currX, currY] - _terrainGrid[tileXPos, tileYPos].GetTerrainCost;
-                        spaces.Add(newSpace);
+                        if ((Mathf.Abs(x) + Mathf.Abs(y)) <= 1 && CanMoveFarther(currX, currY, tileXPos, tileYPos) && !IsSpaceOccupied(tileXPos, tileYPos))
+                        {
+                            Vector2 newSpace = new Vector2(tileXPos, tileYPos);
+                            _moveGrid[tileXPos, tileYPos] = _moveGrid[currX, currY] - _terrainGrid[tileXPos, tileYPos].GetTerrainCost;
+                            spaces.Add(newSpace);
+                        }
+                    }
+                    else
+                    {
+                        if ((Mathf.Abs(x) + Mathf.Abs(y)) <= 1 && IsInAttackRange(currX, currY, tileXPos, tileYPos))
+                        {
+                            Vector2 newSpace = new Vector2(tileXPos, tileYPos);
+                            _moveGrid[tileXPos, tileYPos] = _moveGrid[currX, currY] - _terrainGrid[tileXPos, tileYPos].GetTerrainCost;
+                            spaces.Add(newSpace);
+                        }
                     }
                 }
             }
         }
-        spaces.RemoveAt(0);
-        return spaces;
-    }
 
-    static List<Vector2> AddTilesInAttackRange(List<Vector2> spaces)
-    {
-        for (int i = 0; i < spaces.Count; i++)
+        if(action != Actions.ABILITY)
         {
-            int currX = (int)spaces[i].x;
-            int currY = (int)spaces[i].y;
-
-            for (int y = -1; y <= 1; y++)
-            {
-                int tileYPos = currY + y;
-                for (int x = -1; x <= 1; x++)
-                {
-                    int tileXPos = currX + x;
-                    if ((Mathf.Abs(x) + Mathf.Abs(y)) <= 1 && IsInAttackRange(currX, currY, tileXPos, tileYPos))
-                    {
-                        Vector2 newSpace = new Vector2(tileXPos, tileYPos);
-                        _moveGrid[tileXPos, tileYPos] = _moveGrid[currX, currY] - _terrainGrid[tileXPos, tileYPos].GetTerrainCost;
-                        spaces.Add(newSpace);
-                    }
-                }
-            }
-        }
-        spaces.RemoveAt(0);
-        
-        return spaces;
-    }
-
-    static List<Vector2> AddTilesInAbilityZone(List<Vector2> spaces)
-    {
-        for (int i = 0; i < spaces.Count; i++)
-        {
-            int currX = (int)spaces[i].x;
-            int currY = (int)spaces[i].y;
-
-            for (int y = -1; y <= 1; y++)
-            {
-                int tileYPos = currY + y;
-                for (int x = -1; x <= 1; x++)
-                {
-                    int tileXPos = currX + x;
-                    if ((Mathf.Abs(x) + Mathf.Abs(y)) <= 1 && IsInAttackRange (currX, currY, tileXPos, tileYPos))
-                    {
-                        Vector2 newSpace = new Vector2(tileXPos, tileYPos);
-                        _moveGrid[tileXPos, tileYPos] = _moveGrid[currX, currY] - _terrainGrid[tileXPos, tileYPos].GetTerrainCost;
-                        spaces.Add(newSpace);
-                    }
-                }
-            }
+            spaces.RemoveAt(0);
         }
 
         return spaces;
     }
 
+    
     //checks to see if the player can move any farther 
     //references the movement tracking grid to see if the player has any more movement
     //returns if they can or not(bool)

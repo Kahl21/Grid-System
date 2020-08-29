@@ -1,4 +1,5 @@
 ﻿
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -95,27 +96,27 @@ public class Character
         _myTeam = team;
         _myName = name + tileMoniker;
         _myTileInfo = tileMoniker;
-        _myHealth = Random.Range(50, 201);
+        _myHealth = UnityEngine.Random.Range(50, 201);
         _myMaxHealth = _myHealth; 
         _myMana = 100;
         _myMaxMana = 100;
 
-        int _myStrength = Random.Range(5, 20);
-        int _myMagic = Random.Range(5, 20);
-        int _myAccuracy = Random.Range(10, 101);
-        int _myCritChance = Random.Range(10, 101);
+        int _myStrength = UnityEngine.Random.Range(5, 20);
+        int _myMagic = UnityEngine.Random.Range(5, 20);
+        int _myAccuracy = UnityEngine.Random.Range(10, 101);
+        int _myCritChance = UnityEngine.Random.Range(10, 101);
         _myOffense = new AttackStats(_myStrength, _myMagic, _myAccuracy, _myCritChance);
 
-        int _baseDef = Random.Range(10, 51);
-        int _physRes = Random.Range(-100, 101);
-        int _fireRes = Random.Range(-100, 101);
-        int _iceRes = Random.Range(-100, 101);
-        int _thunderRes = Random.Range(-100, 101);
-        int _lightRes = Random.Range(-100, 101);
-        int _darkRes = Random.Range(-100, 101);
+        int _baseDef = UnityEngine.Random.Range(10, 51);
+        int _physRes = UnityEngine.Random.Range(-100, 101);
+        int _fireRes = UnityEngine.Random.Range(-100, 101);
+        int _iceRes = UnityEngine.Random.Range(-100, 101);
+        int _thunderRes = UnityEngine.Random.Range(-100, 101);
+        int _lightRes = UnityEngine.Random.Range(-100, 101);
+        int _darkRes = UnityEngine.Random.Range(-100, 101);
         _myDefenses = new DefenseStats(_baseDef, _physRes, _fireRes, _iceRes, _thunderRes, _lightRes, _darkRes);
 
-        Weapons newWeapon = (Weapons)Random.Range(0, (int)Weapons.GAUNTLET + 1);
+        Weapons newWeapon = (Weapons)UnityEngine.Random.Range(0, (int)Weapons.GAUNTLET + 1);
         switch (newWeapon)
         {
             case Weapons.SWORD:
@@ -140,8 +141,8 @@ public class Character
                 break;
         }
 
-        _mySpeed = Random.Range(1, 101);
-        _myMovement = Random.Range(1, 3);
+        _mySpeed = UnityEngine.Random.Range(1, 101);
+        _myMovement = UnityEngine.Random.Range(1, 3);
         _gridPos = startPos;
         _stratRef = new CharacterStrategy(this);
         _dead = false;
@@ -207,7 +208,7 @@ public class Character
 
     public void Move()
     {
-        GridHandler.ShowReleventGrid(_gridPos, _currMovement, Color.cyan);
+        GridHandler.ShowReleventGrid(_gridPos, _currMovement, Color.cyan, Actions.MOVE);
     }
 
     public bool CheckForMoreMove(int xpos, int ypos)
@@ -272,7 +273,7 @@ public class Character
 
     public void StartAttack()
     {
-        GridHandler.ShowReleventGrid(_gridPos, _myWeapon, Color.red);
+        GridHandler.ShowReleventGrid(_gridPos, _myWeapon.Range, Color.red, Actions.ATTACK);
     }
 
     public void Attack(Character target)
@@ -320,10 +321,10 @@ public class Character
     public void UseSkill(Ability currSkill)
     {
         List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, currSkill, _myTeam); 
-        int rand = Random.Range(0, _enemiesNearMe.Count);
+        int rand = UnityEngine.Random.Range(0, _enemiesNearMe.Count);
         if(_enemiesNearMe.Count > 0)
         {
-            _enemiesNearMe = GridHandler.GetTargetsInSplashZone(_enemiesNearMe[rand].CurrentPosition, _gridPos, currSkill);
+            _enemiesNearMe = GridHandler.GetTargetsInSplashZone(_enemiesNearMe[rand].CurrentPosition,  currSkill);
 
             currSkill.ActivateSkill(this, _enemiesNearMe);
         }
@@ -340,7 +341,7 @@ public class Character
         //Debug.Log("using " + currSkill.Name);
         if(_enemiesNearMe.Count > 0)
         {
-            _enemiesNearMe = GridHandler.GetTargetsInSplashZone(_enemiesNearMe[0].CurrentPosition, _gridPos, currSkill);
+            _enemiesNearMe = GridHandler.GetTargetsInSplashZone(_enemiesNearMe[0].CurrentPosition, currSkill);
 
             currSkill.ActivateSkill(this, _enemiesNearMe);
         }

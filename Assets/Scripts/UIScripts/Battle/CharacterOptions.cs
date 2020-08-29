@@ -58,7 +58,7 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
         _abilButt = _mainPanel.transform.GetChild(2).GetComponent<Button>();
 
         _abilityPanel = transform.GetChild(1).GetComponent<AbilityOptions>();
-        _abilityPanel.Init(this);
+        _abilityPanel.Init(_uiRef, this);
     }
 
     public void ShowUI(Character currentChar)
@@ -242,6 +242,12 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
     public void ChangeBattleInteraction(UIInteractions state)
     {
         _uiRef.GetInteractionState = state;
+    }
+
+    public void ResetPosition()
+    {
+        _movePos = _startPos;
+        StartMove();
     }
 
     public void ResetUIMovements()

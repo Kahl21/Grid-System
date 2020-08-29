@@ -164,7 +164,6 @@ public class CameraFollow : MonoBehaviour
         {
             _currTime = 1;
             _myCurrMode = CameraModes.FREE;
-            _spaceDiff = _objOfInterest.transform.position - transform.position;
             GameUpdate.Subscribe -= MoveToPosition;
             GameUpdate.Subscribe += PlayerControl;
             _moving = false;
@@ -179,16 +178,19 @@ public class CameraFollow : MonoBehaviour
     {
         _currTime = (Time.time - _startTime) / _zoomSpeed;
 
+        
+        //Debug.Log("zooming");
+
+        transform.position = RandomThings.Interpolate(_currTime, _startPos, _targetPos); 
+        
         if (_currTime > 1)
         {
+            transform.position = _targetPos;
             _currTime = 1;
             _myCurrMode = CameraModes.NONE;
             GameUpdate.Subscribe -= ZoomOn;
             _moving = false;
         }
-        //Debug.Log("zooming");
-
-        transform.position = RandomThings.Interpolate(_currTime, _startPos, _targetPos);
     }
 
     //rotates the camera

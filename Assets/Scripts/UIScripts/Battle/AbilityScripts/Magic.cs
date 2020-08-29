@@ -20,8 +20,8 @@ public class Magic : Ability
         for (int i = 0; i < targets.Count; i++)
         {
             int totalDamage = activator.Offense.Magic + activator.HeldWeapon.MagicMod + _damage;
-            HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + ", and DEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " to " + targets[i].Name + "\n");
-            targets[i].TakeDamage(totalDamage, _element, false);
+            //HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + ", and DEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " to " + targets[i].Name + "\n");
+            FightHandler.AbilityEnemy(totalDamage, _element, targets[i]);
         }
         activator.CurrMana -= _mpCost;
     }
@@ -128,16 +128,18 @@ public class Heal : Magic
         for (int i = 0; i < targets.Count; i++)
         {
             int totalDamage = activator.Offense.Magic + activator.HeldWeapon.MagicMod + _damage;
-            if(targets[i] == activator)
+            /*if(targets[i] == activator)
             {
                 HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name +  ", and HEALS themselves for " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " Health" + "\n");
             }
             else
             {
                 HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + " on " + targets[i].Name + ", and HEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " Health" + "\n");
-            }
-            targets[i].TakeDamage(totalDamage, _element, false);
+            }*/
+
+            FightHandler.AbilityEnemy(totalDamage, _element, targets[i]);
         }
+
         activator.CurrMana -= _mpCost;
     }
 }
@@ -161,7 +163,7 @@ public class FlipFlop : Magic
     {
         for (int i = 0; i < targets.Count; i++)
         {
-            HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + "\n");
+            //HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + "\n");
             GridHandler.SwapEnemies(activator, targets[i]);
         }
         activator.CurrMana -= _mpCost;
@@ -188,7 +190,8 @@ public class Chaos : Magic
         {
             targets.Add(activator);
         }
-        HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + "!!!\n");
+
+        //HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + "!!!\n");
         GridHandler.SwapEnemies(targets);
 
         activator.CurrMana -= _mpCost;

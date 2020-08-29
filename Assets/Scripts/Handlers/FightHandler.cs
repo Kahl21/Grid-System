@@ -264,4 +264,15 @@ public static class FightHandler
         }
         GridHandler.CreateDamage(target.CurrentPosition, damageString);
     }
+
+    static public void AbilityEnemy(int damage, DamageType element,  Character target)
+    {
+        string damageString = "";
+
+        target.TakeDamage(damage, element, false);
+
+        damageString += target.Defense.CalculateDamage(damage, element, false).ToString();
+
+        GridHandler.CreateDamage(target.CurrentPosition, damageString);
+    }
 }

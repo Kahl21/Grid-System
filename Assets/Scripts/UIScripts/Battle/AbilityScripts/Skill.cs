@@ -21,8 +21,8 @@ public class Skill : Ability
         for (int i = 0; i < targets.Count; i++)
         {
             int totalDamage = activator.Offense.Strength + activator.HeldWeapon.MagicMod + _damage;
-            HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + ", and DEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " to " + targets[i].Name + "\n");
-            targets[i].TakeDamage(totalDamage, _element, false);
+            //HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + ", and DEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " to " + targets[i].Name + "\n");
+            FightHandler.AbilityEnemy(totalDamage, _element, targets[i]);
         }
         activator.CurrMana -= _mpCost;
     }
@@ -45,7 +45,7 @@ public class DoubleSlash : Skill
     public override void ActivateSkill(Character activator, List<Character> targets)
     {
 
-        HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + "\n");
+        //HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + "\n");
         for (int i = 0; i < targets.Count; i++)
         {
             FightHandler.AttackEnemy(activator, targets[i]);
@@ -156,15 +156,15 @@ public class HealingPalm : Skill
         int totalDamage = activator.Offense.Strength + activator.HeldWeapon.MagicMod + _damage;
         for (int i = 0; i < targets.Count; i++)
         {
-            if (targets[i] == activator)
+            /*if (targets[i] == activator)
             {
-                HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + ", and HEALS themselves for " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " Health" + "\n");
+                //HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + ", and HEALS themselves for " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " Health" + "\n");
             }
             else
             {
-                HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + " on " + targets[i].Name + ", and HEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " Health" + "\n");
-            }
-            targets[i].TakeDamage(totalDamage, _element, false);
+                //HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + " on " + targets[i].Name + ", and HEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " Health" + "\n");
+            }*/
+            FightHandler.AbilityEnemy(totalDamage, _element, targets[i]);
         }
         activator.CurrMana -= _mpCost;
     }
@@ -190,8 +190,8 @@ public class WarpStrike : Skill
         for (int i = 0; i < targets.Count; i++)
         {
             int totalDamage = activator.Offense.Strength + activator.HeldWeapon.MagicMod + _damage;
-            HistoryHandler.AddToCurrentAction(activator.Name + " DEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " damage to " + targets[i].Name + "\n");
-            targets[i].TakeDamage(totalDamage, _element, false);
+            //HistoryHandler.AddToCurrentAction(activator.Name + " DEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " damage to " + targets[i].Name + "\n");
+            FightHandler.AbilityEnemy(totalDamage, _element, targets[i]);
             GridHandler.SwapEnemies(activator, targets[i]);
         }
         activator.CurrMana -= _mpCost;
@@ -214,15 +214,15 @@ public class Yi_Q : Skill
 
     public override void ActivateSkill(Character activator, List<Character> targets)
     {
-        HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + "\n");
+        //HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + "\n");
         for (int i = 0; i < targets.Count; i++)
         {
             int totalDamage = activator.Offense.Strength + activator.HeldWeapon.MagicMod + _damage;
             if (targets[i] != activator)
             {
-                HistoryHandler.AddToCurrentAction(activator.Name + " DEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " damage to " + targets[i].Name + "\n");
+                //HistoryHandler.AddToCurrentAction(activator.Name + " DEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " damage to " + targets[i].Name + "\n");
                 GridHandler.SwapEnemies(activator, targets[i]);
-                targets[i].TakeDamage(totalDamage, _element, false);
+                FightHandler.AbilityEnemy(totalDamage, _element, targets[i]);
             }
         }
         activator.CurrMana -= _mpCost;

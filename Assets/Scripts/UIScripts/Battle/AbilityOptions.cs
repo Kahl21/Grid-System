@@ -12,6 +12,7 @@ public class AbilityOptions : MonoBehaviour, IFadeable
     Image _descImage;
     Text _descText;
 
+    BattleUI _battleRef;
     CharacterOptions _optionsRef;
     Character _selectedChar;
 
@@ -26,8 +27,9 @@ public class AbilityOptions : MonoBehaviour, IFadeable
     public bool IsHidden { get { return _hidden; } }
     public bool IsMoving { get { return _moving; } }
 
-    public void Init(CharacterOptions opt)
+    public void Init(BattleUI bat, CharacterOptions opt)
     {
+        _battleRef = bat;
         _optionsRef = opt;
         _selectedChar = null;
         _hidden = true;
@@ -74,7 +76,7 @@ public class AbilityOptions : MonoBehaviour, IFadeable
             newButton.GetComponent<RectTransform>().localPosition = spawnPos;
 
             //interesting. makes a delegate and then adds the function to it? then allows it to be used?
-            newButton.GetComponent<Button>().onClick.AddListener(delegate { UseSelectedSkill(_currAbilities[newButton.transform.GetSiblingIndex() - 2]); });
+            newButton.GetComponent<Button>().onClick.AddListener(delegate { ShowSelectedSkill(_currAbilities[newButton.transform.GetSiblingIndex() - 2]); });
             _currButtons.Add(newButton.GetComponent<Button>());
 
             Text newtext = newButton.transform.GetChild(0).GetComponent<Text>();
@@ -82,10 +84,9 @@ public class AbilityOptions : MonoBehaviour, IFadeable
         }
     }
 
-    public void UseSelectedSkill(Ability ab)
+    public void ShowSelectedSkill(Ability ab)
     {
-        GridHandler.ShowReleventGrid(_selectedChar.CurrentPosition, ab, Color.red);
-        _optionsRef.ChangeBattleInteraction(UIInteractions.SPELLSELECT);
+        _battleRef.AbilitySelected(ab);
         HideUI();
     }
 
@@ -149,6 +150,7 @@ public class AbilityOptions : MonoBehaviour, IFadeable
         {
             Destroy(_currButtons[i].gameObject);
         }
+
         _currButtons = new List<Button>();
         _currAbilities = new List<Ability>();
     }

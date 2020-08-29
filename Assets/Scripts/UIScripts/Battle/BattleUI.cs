@@ -10,8 +10,8 @@ public enum UIInteractions
     ABILITYOPEN,
     MOVESELECT,
     ATTACKSELECT,
-    SPELLSELECT,
-    SPELLUSE
+    ABILITYSELECT,
+    ABILITYUSE
 }
 
 public class BattleUI : MonoBehaviour
@@ -19,6 +19,9 @@ public class BattleUI : MonoBehaviour
     UIHolder _uiRef;
 
     Character _selectedCharacter;
+    Ability _selectedAbility;
+    Vector2 _abilityTarget;
+
     //upper UI
     Text _heightText;
     GameObject _timeline;
@@ -30,12 +33,8 @@ public class BattleUI : MonoBehaviour
     Text _shortMana;
 
     //detailed description
-    GameObject _detailHolder;
-    Image _detPort;
-    Text _detCharInfo;
-    Vector3 _detailStartPos, _detailEndPos;
-    float _currTime, _startTime;
-    float _speedDelta = .3f;
+    CharacterDescription _detailHolder;
+
 
     //battle menu
     CharacterOptions _optionsRef;
@@ -73,13 +72,8 @@ public class BattleUI : MonoBehaviour
         _optionsRef = transform.GetChild(3).GetComponent<CharacterOptions>();
         _optionsRef.Init(this);
 
-        _detailHolder = transform.GetChild(4).gameObject;
-        _detailStartPos = _detailHolder.GetComponent<RectTransform>().position;
-        _detailEndPos = _detailStartPos;
-        _detailEndPos.x = Screen.width;
-        _detPort = _detailHolder.transform.GetChild(0).GetComponent<Image>();
-        _detCharInfo = _detailHolder.transform.GetChild(1).GetComponent<Text>();
-        _detailHolder.SetActive(false);
+        _detailHolder = transform.GetChild(4).GetComponent<CharacterDescription>();
+        _detailHolder.Init(this);
 
         GameUpdate.Subscribe += PlayerInteract;
     }
@@ -116,10 +110,10 @@ public class BattleUI : MonoBehaviour
             case UIInteractions.ATTACKSELECT:
                 AttackInteract();
                 break;
-            case UIInteractions.SPELLSELECT:
+            case UIInteractions.ABILITYSELECT:
                 AbilityInteract();
                 break;
-            case UIInteractions.SPELLUSE:
+            case UIInteractions.ABILITYUSE:
                 FinalizeAbility();
                 break;
             default:
@@ -325,14 +319,60 @@ public class BattleUI : MonoBehaviour
         }
     }
 
+    public void AbilitySelected(Ability ability)
+    {
+        _selectedAbility = ability;
+        GridHandler.ShowReleventGrid(_selectedCharacter.CurrentPosition, _selectedAbility.TargetRange, Color.red, Actions.ATTACK);
+        _interactState = UIInteractions.ABILITYSELECT;
+    }
+
     void AbilityInteract()
     {
+        Ray ray = _battleCam.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
 
+        if (Physics.Raycast(ray, out hit))
+        {
+            //if hits something
+
+            //Debug.Log("hit something");
+            Collider objCollider = hit.collider;
+
+            if (objCollider.GetComponent<Tile>())
+            {
+                Tile tile = objCollider.GetComponent<Tile>();
+                if (tile.IsTargetable && Input.GetMouseButtonDown(0))
+                {
+                    _abilityTarget = new Vector2(tile.GetXPosition, tile.GetYPosition);
+                    GridHandler.ShowReleventGrid(_abilityTarget, _selectedAbility.SplashRange, Color.red, Actions.ABILITY);
+                    _interactState = UIInteractions.ABILITYUSE;
+                    _battleCam.FocusObject(tile.gameObject, CameraModes.ZOOMING);
+                }
+
+            }
+            else if(objCollider.GetComponent<GridToken>())
+            {
+                GridToken gt = objCollider.GetComponent<GridToken>();
+                if (gt.GetTile.IsTargetable && Input.GetMouseButtonDown(0))
+                {
+                    _abilityTarget = new Vector2(gt.GetTile.GetXPosition, gt.GetTile.GetYPosition);
+                    GridHandler.ShowReleventGrid(_abilityTarget, _selectedAbility.SplashRange, Color.red, Actions.ABILITY);
+                    _interactState = UIInteractions.ABILITYUSE;
+                    _battleCam.FocusObject(gt.gameObject, CameraModes.ZOOMING);
+                }
+            }
+        }
     }
 
     void FinalizeAbility()
     {
-
+        if (Input.GetMouseButtonDown(0) && GridHandler.CheckForEnemyWithinSpashZone(_abilityTarget, _selectedAbility.SplashRange))
+        {
+            _optionsRef.HideUI();
+            _selectedCharacter.Strategy.HasAttacked = true;
+            _selectedAbility.ActivateSkill(_selectedCharacter, GridHandler.GetTargetsInSplashZone(_abilityTarget, _selectedAbility));
+            _battleCam.FocusObject(GridHandler.RetrieveTile(_abilityTarget).gameObject, CameraModes.MOVING); 
+        }
     }
 
     public void CharacterDoneMoving(GridToken currChar)
@@ -402,12 +442,14 @@ public class BattleUI : MonoBehaviour
                         _optionsRef.BackToMenu();
                         _optionsRef.GetAbilityPanel.ResetFading();
                         break;
-                    case UIInteractions.SPELLSELECT:
+                    case UIInteractions.ABILITYSELECT:
                         _battleCam.FocusObject(GridHandler.RetrieveToken(_selectedCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
                         _interactState = UIInteractions.MENUOPEN;
                         _optionsRef.ShowOnlyAbilites();
                         break;
-                    case UIInteractions.SPELLUSE:
+                    case UIInteractions.ABILITYUSE:
+                        _battleCam.FocusObject(GridHandler.RetrieveTile(_abilityTarget).gameObject, CameraModes.MOVING);
+                        AbilitySelected(_selectedAbility);
                         break;
                     default:
                         break;
@@ -435,7 +477,7 @@ public class BattleUI : MonoBehaviour
     void HighlightCharacter(Tile highlightedToken)
     {
         //get character info from GridHandler by sending GridToken Position
-        Character highlightedCharacter = GridHandler.RetrieveCharacter(highlightedToken.GetXPosition, highlightedToken.GetYPosition); ;
+        Character highlightedCharacter = GridHandler.RetrieveCharacter(highlightedToken.GetXPosition, highlightedToken.GetYPosition);
 
         //turn on short detail if it isnt on 
         //plug character info into UI
@@ -466,86 +508,18 @@ public class BattleUI : MonoBehaviour
         //get character info from GridHandler by sending GridToken Position
         Character clickedOnCharacter = GridHandler.RetrieveCharacter(clickedOnToken.GetXPosition, clickedOnToken.GetYPosition);
 
-        //Plug in all character details
-        _detPort.sprite = clickedOnCharacter.GetSprite;
-
-        string characterInfo = "Team " + clickedOnCharacter.Team + "\n";
-        characterInfo += clickedOnCharacter.Name + "\n"
-                        + "Weapon: " + clickedOnCharacter.HeldWeapon.Name + " --> " + clickedOnCharacter.HeldWeapon.WeaponElement + "\n\n"
-                        + "Health: " + clickedOnCharacter.CurrHealth + "/" + clickedOnCharacter.MaxHealth + "\n"
-                        + "Mana: " + clickedOnCharacter.CurrMana + "/" + clickedOnCharacter.MaxMana + "\n"
-                        + "Strength: " + (clickedOnCharacter.Offense.Strength + clickedOnCharacter.HeldWeapon.StrengthMod) + " (" + clickedOnCharacter.HeldWeapon.StrengthMod + ")" + "\n"
-                        + "Magic: " + (clickedOnCharacter.Offense.Strength + clickedOnCharacter.HeldWeapon.MagicMod) + "(" + clickedOnCharacter.HeldWeapon.MagicMod + ")" + "\n"
-                        + "Defense: " + clickedOnCharacter.Defense.BaseDefense + "\n"
-                        + "Accuracy: " + (clickedOnCharacter.Offense.Accuracy + clickedOnCharacter.HeldWeapon.Accuracy) + "%" + " (" + clickedOnCharacter.HeldWeapon.Accuracy + ")" + "\n"
-                        + "Critical Chance: " + (clickedOnCharacter.Offense.CriticalChance + clickedOnCharacter.HeldWeapon.Crit) + "%" + " (" + clickedOnCharacter.HeldWeapon.Crit + ")" + "\n"
-                        + "Speed: " + clickedOnCharacter.Speed + "\n"
-                        + "Movement: " + clickedOnCharacter.Movement + "\n\n"
-                        + "Resistances: Fire/" + clickedOnCharacter.Defense.FireRes + "\n"
-                        + "             Ice/" + clickedOnCharacter.Defense.IceRes + "\n"
-                        + "             Thunder/" + clickedOnCharacter.Defense.ThunderRes + "\n"
-                        + "             Light/" + clickedOnCharacter.Defense.LightRes + "\n"
-                        + "             Dark/" + clickedOnCharacter.Defense.DarkRes + "\n\n";
-
-        _detCharInfo.text = characterInfo;
-
-
-        //turn on the UI and move it into position
-        _detailHolder.SetActive(true);
+        _detailHolder.ShowUI(clickedOnCharacter);
         _battleCam.FocusObject(clickedOnToken.gameObject, CameraModes.ZOOMING);
-        _startTime = Time.time;
-        GameUpdate.Subscribe += MoveDetailsOnScreen;
     }
 
     //Turns off long character details
     void UnShowDetail()
     {
         //Debug.Log("detail unshown");
+        _detailHolder.HideUI();
         _battleCam.ResetCamera();
-        _startTime = Time.time;
-        GameUpdate.Subscribe += MoveDetailsOffScreen;
     }
-
-    //moves long detail into position
-    void MoveDetailsOnScreen() 
-    {
-        //math interpolate position
-        _currTime = (Time.time - _startTime) / _speedDelta;
-        //Debug.Log("MovingUI on");
-        if (_currTime > 1)
-        {
-            _currTime = 1;
-            //Debug.Log("details on");
-            GameUpdate.Subscribe -= MoveDetailsOnScreen;
-            _interactState = UIInteractions.ZOOMED;
-        }
-
-
-        //move UI on screen
-
-        _detailHolder.GetComponent<RectTransform>().position = RandomThings.Interpolate(_currTime, _detailStartPos, _detailEndPos);
-    }
-
-    void MoveDetailsOffScreen()
-    {
-        //math interpolate position
-        _currTime = (Time.time - _startTime) / _speedDelta;
-        //Debug.Log("MovingUI off");
-        
-        if (_currTime > 1)
-        {
-            _currTime = 1;
-            
-            //Debug.Log("details off");
-            _detailHolder.SetActive(false);
-            GameUpdate.Subscribe -= MoveDetailsOffScreen;
-            _interactState = UIInteractions.FREE;
-        }
-
-        //move UI off of screen
-        _detailHolder.GetComponent<RectTransform>().position = RandomThings.Interpolate(_currTime, _detailEndPos, _detailStartPos);
-    }
-
+    
     //turn on character interaction UI
     void ShowActionsMenu(Tile chara)
     {
@@ -561,7 +535,6 @@ public class BattleUI : MonoBehaviour
         else
         {
             HideActionsMenu();
-            _selectedCharacter = null;
         }
     }
     
@@ -572,5 +545,6 @@ public class BattleUI : MonoBehaviour
         _optionsRef.ResetUIMovements();
         _interactState = UIInteractions.FREE;
         _selectedCharacter = null;
+        _selectedAbility = null;
     }
 }

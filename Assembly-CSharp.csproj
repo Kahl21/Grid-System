@@ -84,6 +84,7 @@
     <Compile Include="Assets\Scripts\UIScripts\Battle\AbilityScripts\Skill.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\AbilityScripts\SpellBook.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\BattleUI.cs" />
+    <Compile Include="Assets\Scripts\UIScripts\Battle\CharacterDescription.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\CharacterOptions.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\DamageText.cs" />
     <Compile Include="Assets\Scripts\UIScripts\CameraFollow.cs" />
