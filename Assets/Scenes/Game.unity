@@ -1375,7 +1375,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Number Of Teams
+  m_Text: "Grid Size \n(width x height)"
 --- !u!222 &604935525
 CanvasRenderer:
   m_ObjectHideFlags: 0

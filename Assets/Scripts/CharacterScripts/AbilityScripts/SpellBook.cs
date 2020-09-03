@@ -14,7 +14,7 @@ public static class SpellBook
         LoadSkills();
         LoadMagic();
 
-        Debug.Log(_allSpells.Count + ", Spells loaded");
+        //Debug.Log(_allSpells.Count + ", Spells loaded");
     }
 
     static void LoadSkills()

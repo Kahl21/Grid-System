@@ -69,7 +69,7 @@ public class Character
         _myMaxMana = 100;
 
         _myOffense = new AttackStats(10, 10, 75, 25);
-        _myDefenses = new DefenseStats(10, 0, 0, 0, 0, 0);
+        _myDefenses = new DefenseStats(10, 0, 0, 0, 0, 0, 0);
 
         _myWeapon = new Weapon();
 
@@ -98,12 +98,13 @@ public class Character
         _myOffense = new AttackStats(_myStrength, _myMagic, _myAccuracy, _myCritChance);
 
         int _baseDef = Random.Range(10, 51);
+        int _physRes = UnityEngine.Random.Range(-100, 101);
         int _fireRes = Random.Range(-100, 101);
         int _iceRes = Random.Range(-100, 101);
         int _thunderRes = Random.Range(-100, 101);
         int _lightRes = Random.Range(-100, 101);
         int _darkRes = Random.Range(-100, 101);
-        _myDefenses = new DefenseStats(_baseDef, _fireRes, _iceRes, _thunderRes, _lightRes, _darkRes);
+        _myDefenses = new DefenseStats(_baseDef, _physRes, _fireRes, _iceRes, _thunderRes, _lightRes, _darkRes);
 
         Weapons newWeapon = (Weapons)Random.Range(0, (int)Weapons.GAUNTLET + 1);
         switch (newWeapon)
@@ -138,7 +139,7 @@ public class Character
     }
 
     //incredibly specific constructor
-    public Character(string name, string tileMoniker, int teamNumber, int hp, int mp, int att, int mag, int acc, int crit, int baseDef, int fireRes, int iceRes, int thunRes, int lightRes, int darkRes,  int speed,  int move, Weapons weapon, Vector2 startPos)
+    public Character(string name, string tileMoniker, int teamNumber, int hp, int mp, int att, int mag, int acc, int crit, int baseDef, int physRes, int fireRes, int iceRes, int thunRes, int lightRes, int darkRes,  int speed,  int move, Weapons weapon, Vector2 startPos)
     {
         _myTeamNumber = teamNumber;
         _myName = name + tileMoniker;
@@ -149,7 +150,7 @@ public class Character
         _myMaxMana = mp;
 
         _myOffense = new AttackStats(att, mag, acc, crit);
-        _myDefenses = new DefenseStats(baseDef, fireRes, iceRes, thunRes, lightRes, darkRes);
+        _myDefenses = new DefenseStats(baseDef, physRes, fireRes, iceRes, thunRes, lightRes, darkRes);
 
         switch (weapon)
         {
@@ -240,9 +241,9 @@ public class Character
                     movingTo = _myMoves[i];
                 }
             }
-            
         }
 
+        GridHandler.GetShortestMoves(this, target.CurrentPosition);
         GridHandler.MoveEnemy(this, movingTo);
     }
 
@@ -362,15 +363,17 @@ public struct AttackStats
 public struct DefenseStats
 {
     public int BaseDefense;
+    public int PhysRes;
     public int FireRes;
     public int IceRes;
     public int ThunderRes;
     public int LightRes;
     public int DarkRes;
 
-    public DefenseStats(int def, int fireRes, int iceRes, int thunRes, int lightRes, int darkRes)
+    public DefenseStats(int def, int physRes, int fireRes, int iceRes, int thunRes, int lightRes, int darkRes)
     {
         BaseDefense = def;
+        PhysRes = physRes;
         FireRes = fireRes;
         IceRes = iceRes;
         ThunderRes = thunRes;
@@ -381,26 +384,27 @@ public struct DefenseStats
     public int CalculateDamage(int damage, DamageType damageType, bool crit)
     {
         int actualDamage = 0;
+        float currResistance = 0;
 
         switch (damageType)
         {
             case DamageType.PHYSICAL:
-                actualDamage = BaseDefense - damage;
+                currResistance = PhysRes;
                 break;
             case DamageType.FIRE:
-                actualDamage = BaseDefense - (damage - (damage * (FireRes / 100)));
+                currResistance = FireRes;
                 break;
             case DamageType.ICE:
-                actualDamage = BaseDefense - (damage - (damage * (IceRes / 100)));
+                currResistance = IceRes;
                 break;
             case DamageType.THUNDER:
-                actualDamage = BaseDefense - (damage - (damage * (ThunderRes / 100)));
+                currResistance = ThunderRes;
                 break;
             case DamageType.LIGHT:
-                actualDamage = BaseDefense - (damage - (damage * (LightRes / 100)));
+                currResistance = LightRes;
                 break;
             case DamageType.DARK:
-                actualDamage = BaseDefense - (damage - (damage * (DarkRes / 100)));
+                currResistance = DarkRes;
                 break;
             case DamageType.HEALING:
                 actualDamage = damage;
@@ -409,12 +413,16 @@ public struct DefenseStats
                 break;
         }
 
-        if(actualDamage > 0 && damageType != DamageType.HEALING)
+        actualDamage = (int)(/*BaseDefense*/0 - (damage * (1 - (currResistance / 100))));
+
+        //Debug.Log(actualDamage);
+
+        if (actualDamage > 0 && damageType != DamageType.HEALING)
         {
             actualDamage = 0;
         }
 
-        if(crit)
+        if (crit)
         {
             actualDamage *= 2;
         }

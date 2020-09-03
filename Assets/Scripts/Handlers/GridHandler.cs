@@ -8,13 +8,17 @@ public static class GridHandler
     static Character[,] _battleGrid;
     static TerrainSpace[,] _terrainGrid;
     static int[,] _moveGrid;
+    static int[,] _distanceGrid;
+    static bool[,] _visitCheckGrid;
 
     public static void CreateNewGrid(int numOfRows, int numOfColms)
     {
         _battleGrid = new Character[numOfRows, numOfColms];
 
         _moveGrid = new int[numOfRows, numOfColms];
-        ResetMoveGrid();
+        ResetIntGrid(_moveGrid);
+
+        _distanceGrid = new int[numOfRows, numOfColms];
 
         _terrainGrid = new TerrainSpace[numOfRows, numOfColms];
         for (int y = 0; y < _terrainGrid.GetLength(1); y++)
@@ -265,7 +269,7 @@ public static class GridHandler
                 }
                 else if ((Mathf.Abs(x) + Mathf.Abs(y)) == heldWeapon.Range && IsSpaceOccupied(tileXPos, tileYPos))
                 {
-                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos,tileYPos].Team != TeamNum)
+                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos, tileYPos].Team != TeamNum)
                     {
                         return true;
                     }
@@ -303,7 +307,7 @@ public static class GridHandler
                         return true;
                     }
                 }
-                
+
             }
         }
 
@@ -352,7 +356,7 @@ public static class GridHandler
 
                 if ((Mathf.Abs(x) + Mathf.Abs(y)) <= ability.TargetRange && IsSpaceOccupied(tileXPos, tileYPos, target))
                 {
-                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos,tileYPos].Team != TeamNum)
+                    if (tileXPos >= 0 && tileYPos >= 0 && characterPos != checkedPos && _battleGrid[tileXPos, tileYPos].Team != TeamNum)
                     {
                         return true;
                     }
@@ -380,7 +384,7 @@ public static class GridHandler
 
     public static void MoveEnemy(Character movingCharacter, Vector2 desiredPos)
     {
-        if(movingCharacter.CurrentPosition != desiredPos)
+        if (movingCharacter.CurrentPosition != desiredPos)
         {
             HistoryHandler.AddToCurrentAction(movingCharacter.Name + " MOVES \n");
             ClearSpace(movingCharacter.CurrentPosition);
@@ -388,7 +392,7 @@ public static class GridHandler
             movingCharacter.CurrentPosition = desiredPos;
             _battleGrid[(int)desiredPos.x, (int)desiredPos.y] = movingCharacter;
         }
-        else if(movingCharacter.SpacesICanMove.Count == 1)
+        else if (movingCharacter.SpacesICanMove.Count == 1)
         {
             HistoryHandler.AddToCurrentAction(movingCharacter.Name + " CAN'T MOVE \n");
         }
@@ -397,10 +401,10 @@ public static class GridHandler
             HistoryHandler.AddToCurrentAction(movingCharacter.Name + " STANDS IN PLACE \n");
         }
     }
-    
+
     //swap two characters to each others position
     public static void SwapEnemies(Character c1, Character c2)
-    { 
+    {
         Vector2 temp1 = new Vector2(c1.CurrentPosition.x, c1.CurrentPosition.y);
         Vector2 temp2 = new Vector2(c2.CurrentPosition.x, c2.CurrentPosition.y);
 
@@ -410,8 +414,8 @@ public static class GridHandler
 
         c2.CurrentPosition = temp1;
         _battleGrid[(int)temp1.x, (int)temp1.y] = c2;
-        Debug.Log(c1.CurrentPosition + " --- " + temp2);
-        Debug.Log(c2.CurrentPosition + " --- " + temp1);
+        //Debug.Log(c1.CurrentPosition + " --- " + temp2);
+        //Debug.Log(c2.CurrentPosition + " --- " + temp1);
         HistoryHandler.AddToCurrentAction(c1.Name + " and " + c2.Name + " have swapped places!\n");
     }
 
@@ -422,7 +426,7 @@ public static class GridHandler
 
         for (int i = 0; i < enemiesToFuckWith.Count; i++)
         {
-            while(rand1 == rand2)
+            while (rand1 == rand2)
             {
                 rand1 = Random.Range(0, enemiesToFuckWith.Count);
                 rand2 = Random.Range(0, enemiesToFuckWith.Count);
@@ -432,6 +436,20 @@ public static class GridHandler
 
             rand1 = 0;
             rand2 = 0;
+        }
+    }
+
+    // Utility method to check whether a point is 
+    // inside the grid or not 
+    static bool IsInsideGrid(int pointx, int pointy)
+    {
+        if (pointx >= 0 && pointx < _battleGrid.GetLength(0) && pointy >= 0 && pointy < _battleGrid.GetLength(1))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 
@@ -453,7 +471,7 @@ public static class GridHandler
         {
             return false;
         }
-            
+
     }
     public static bool IsSpaceOccupied(int pointx, int pointy, Character target)
     {
@@ -490,7 +508,7 @@ public static class GridHandler
         catch
         {
             return false;
-        }  
+        }
     }
     public static bool IsSpaceOccupied(Vector2 checkPosition, Character target)
     {
@@ -512,9 +530,128 @@ public static class GridHandler
 
     }
 
+    public static void GetShortestMoves(Character moveableChar, Vector2 targetedSpace)
+    {
+        Shortest(moveableChar.CurrentPosition, targetedSpace);
+        
+
+    }
+
+    static bool CompareSpace(Vector2 a, Vector2 b) 
+    {
+        if (_terrainGrid[(int)a.x,(int)a.y].GetTerrainCost == _terrainGrid[(int)b.x, (int)b.y].GetTerrainCost) 
+        { 
+            if (a.x != b.x) 
+                return (a.x < b.x); 
+            else
+                return (a.y < b.y); 
+        } 
+        return (_terrainGrid[(int)a.x, (int)a.y].GetTerrainCost < _terrainGrid[(int)b.x, (int)b.y].GetTerrainCost); 
+    } 
+
+
+    // Method returns minimum cost to reach bottom 
+    // right from top left 
+    static int Shortest(Vector2 startPos, Vector2 endPos)
+    {
+  
+        // initializing distance array by INT_MAX 
+        for (int i = 0; i < _battleGrid.GetLength(0); i++) 
+            for (int j = 0; j < _battleGrid.GetLength(1); j++) 
+                _distanceGrid[i,j] = 1000; 
+  
+        // direction arrays for simplification of getting 
+        // neighbour 
+        int[] dx = { -1, 0, 1, 0 };
+        int[] dy = { 0, 1, 0, -1 };
+
+        List<Vector2> st = new List<Vector2>();
+
+        // insert (0, 0) cell with 0 distance 
+        st.Add(new Vector2((int)startPos.x,(int) startPos.y));
+
+        // initialize distance of (0, 0) with its grid value 
+        _distanceGrid[(int)startPos.x, (int)startPos.y] = _terrainGrid[(int)startPos.x, (int)startPos.y].GetTerrainCost; 
+  
+            // loop for standard dijkstra's algorithm 
+            while (st.Count > 0) 
+            { 
+                // get the cell with minimum distance and delete 
+                // it from the set 
+                Vector2 k = st[0];
+                st.RemoveAt(0); 
+  
+            // looping through all neighbours 
+            for (int i = 0; i< 4; i++) 
+            { 
+                    int x = (int)k.x + dx[i];
+                    int y = (int)k.y + dy[i]; 
+  
+                // if not inside boundary, ignore them 
+                if (!IsInsideGrid(x, y)) 
+                    continue; 
+  
+                // If distance from current cell is smaller, then 
+                // update distance of neighbour cell 
+                if (_distanceGrid[x,y] > _distanceGrid[(int)k.x,(int)k.y] + _terrainGrid[x,y].GetTerrainCost) 
+                { 
+                    // If cell is already there in set, then 
+                    // remove its previous entry 
+                    if (_distanceGrid[x,y] != 1000)
+                    {
+                        int num = GetListPlaceFromValue(st, new Vector2(x, y));
+                        if (num != -1)
+                        {
+                            st.RemoveAt(num);
+                        }
+                    }
+
+                    // update the distance and insert new updated 
+                    // cell in set 
+                    _distanceGrid[x,y] = _distanceGrid[(int)k.x, (int)k.y] + _terrainGrid[x,y].GetTerrainCost; 
+                    
+                    st.Add(new Vector2(x,y)); 
+                } 
+            } 
+        }
+
+        // print distance of each cell from (0, 0) 
+        string debug = "";
+
+        for (int j = 0; j < _distanceGrid.GetLength(1); j++)
+        {
+            for (int i = 0; i < _distanceGrid.GetLength(0); i++)
+            {
+                debug += "[" + _distanceGrid[i, j] + "] ";
+            }
+            debug += "\n";
+        }
+
+        Debug.Log(debug);
+
+
+        // dis[row - 1][col - 1] will represent final 
+        // distance of bottom right cell from top left cell
+        Debug.Log(_distanceGrid[(int)endPos.x, (int)endPos.y] + ", " + endPos);
+        return _distanceGrid[(int)endPos.x,(int)endPos.y]; 
+    }
+
+    static int GetListPlaceFromValue(List<Vector2> d, Vector2 thing)
+    {
+        for (int i = 0; i < d.Count; i++)
+        {
+            if(d[i] == thing)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
     public static List<Vector2> WhereCanIMove(Vector2 startPosition, int movement)
     {
-        ResetMoveGrid();
+        ResetIntGrid(_moveGrid);
         List<Vector2> availableSpaces = new List<Vector2>();
 
         int startX = (int)startPosition.x;
@@ -529,16 +666,17 @@ public static class GridHandler
         return availableSpaces;    
     }
     
-    static void ResetMoveGrid()
+    static void ResetIntGrid(int [,] grid)
     {
-        for (int y = 0; y < _moveGrid.GetLength(1); y++)
+        for (int y = 0; y < grid.GetLength(1); y++)
         {
-            for (int x = 0; x < _moveGrid.GetLength(0); x++)
+            for (int x = 0; x < grid.GetLength(0); x++)
             {
-                _moveGrid[x, y] = -1;
+                grid[x, y] = -1;
             }
         }
     }
+
 
     static public void FinalizeGridLayoutForTurn()
     {
@@ -570,14 +708,14 @@ public static class GridHandler
         {
             int currX = (int)spaces[i].x;
             int currY = (int)spaces[i].y;
-            
+
             for (int y = -1; y <= 1; y++)
             {
                 int tileYPos = currY + y;
                 for (int x = -1; x <= 1; x++)
                 {
                     int tileXPos = currX + x;
-                    if ((Mathf.Abs(x) + Mathf.Abs(y)) <= 1 && CanMoveFarther(currX, currY, tileXPos, tileYPos) && !IsSpaceOccupied(tileXPos, tileYPos)) 
+                    if ((Mathf.Abs(x) + Mathf.Abs(y)) <= 1 && CanMoveFarther(currX, currY, tileXPos, tileYPos) && !IsSpaceOccupied(tileXPos, tileYPos))
                     {
                         Vector2 newSpace = new Vector2(tileXPos, tileYPos);
                         _moveGrid[tileXPos, tileYPos] = _moveGrid[currX, currY] - _terrainGrid[tileXPos, tileYPos].GetTerrainCost;
@@ -592,9 +730,9 @@ public static class GridHandler
 
     static bool CanMoveFarther(int xPos, int yPos, int xCheck, int yCheck)
     {
-        try
+        if (IsInsideGrid(xCheck, yCheck))
         {
-            if ((_moveGrid[xPos, yPos] - _terrainGrid[xCheck, yCheck].GetTerrainCost) >= 0 && _moveGrid[xCheck,yCheck] == -1)
+            if ((_moveGrid[xPos, yPos] - _terrainGrid[xCheck, yCheck].GetTerrainCost) >= 0 && _moveGrid[xCheck, yCheck] == -1)
             {
                 return true;
             }
@@ -603,9 +741,7 @@ public static class GridHandler
                 return false;
             }
         }
-        catch
-        {
-            return false;
-        }
+
+        return false;
     }
 }

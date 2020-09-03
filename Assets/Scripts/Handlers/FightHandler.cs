@@ -89,10 +89,11 @@ public static class FightHandler
             sortedEnemies.Add(temp);
         }
 
-        for (int i = 0; i < sortedEnemies.Count; i++)
+        /*for (int i = 0; i < sortedEnemies.Count; i++)
         {
             Debug.Log(sortedEnemies[i].Name + ", " + sortedEnemies[i].Team + ", " + sortedEnemies[i].Speed);
-        }
+        } */
+
 
         return sortedEnemies;
     }

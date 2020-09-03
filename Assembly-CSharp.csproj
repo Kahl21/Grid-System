@@ -9,7 +9,7 @@
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <RootNamespace></RootNamespace>
-    <ProjectGuid>{55D3730F-6AA0-BCF1-7A10-F14ADC10CE34}</ProjectGuid>
+    <ProjectGuid>{CB08F3D5-4326-E10B-BAD7-3E1736412406}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>Assembly-CSharp</AssemblyName>
@@ -76,31 +76,31 @@
     <Compile Include="Assets\Scripts\TerrainSpace.cs" />
     <Compile Include="Assets\Scripts\UIHolder.cs" />
     <Reference Include="Unity.Timeline.Editor">
-      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-System/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
+      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-Data/Library/ScriptAssemblies/Unity.Timeline.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.VSCode.Editor">
-      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-System/Library/ScriptAssemblies/Unity.VSCode.Editor.dll</HintPath>
+      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-Data/Library/ScriptAssemblies/Unity.VSCode.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro.Editor">
-      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-System/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
+      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-Data/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-System/Library/ScriptAssemblies/UnityEngine.UI.dll</HintPath>
+      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-Data/Library/ScriptAssemblies/UnityEngine.UI.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Timeline">
-      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-System/Library/ScriptAssemblies/Unity.Timeline.dll</HintPath>
+      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-Data/Library/ScriptAssemblies/Unity.Timeline.dll</HintPath>
     </Reference>
     <Reference Include="Unity.CollabProxy.Editor">
-      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-System/Library/ScriptAssemblies/Unity.CollabProxy.Editor.dll</HintPath>
+      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-Data/Library/ScriptAssemblies/Unity.CollabProxy.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Rider.Editor">
-      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-System/Library/ScriptAssemblies/Unity.Rider.Editor.dll</HintPath>
+      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-Data/Library/ScriptAssemblies/Unity.Rider.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-System/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
+      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-Data/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
     </Reference>
     <Reference Include="UnityEditor.UI">
-      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-System/Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
+      <HintPath>C:/Users/Kahl/Desktop/Programmin'/Unity/Grid Game/Grid-Data/Library/ScriptAssemblies/UnityEditor.UI.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AIModule">
       <HintPath>C:/Program Files/Unity/Hub/Editor/2019.3.7f1/Editor/Data/Managed/UnityEngine/UnityEngine.AIModule.dll</HintPath>
