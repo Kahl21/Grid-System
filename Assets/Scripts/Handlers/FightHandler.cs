@@ -10,54 +10,26 @@ public static class FightHandler
 
     static List<Character> _spawnedEnemies;
     public static List<Character> GetEnemies { get { return _spawnedEnemies; } }
-   // static List<Character> _turnOrder;
-   // public static List<Character> GetTurnOrder;
 
-    //Base Constructor
-    public static void Init()
-    {
-        _enemiesToMake = 2;
-        _currentEnemyNum = 0;
-        _spawnedEnemies = new List<Character>();
-        CreateEnemies();
-    }
-
-    //Constructor if UI is used
-    public static void Init(int numberOfEnemies)
-    {
-        _currentEnemyNum = 0;
-        _enemiesToMake = numberOfEnemies;
-        _spawnedEnemies = new List<Character>();
-        CreateEnemies();
-        HistoryHandler.AddToCurrentAction("Battle Start!");
-        HistoryHandler.FinalizeAction();
-    }
-
+    //Called
     public static void Init(int numberOfEnemies, int numberOfTeams)
     {
         _currentEnemyNum = 0;
         _enemiesToMake = numberOfEnemies;
-        _spawnedEnemies = new List<Character>();
         CreateEnemies(numberOfTeams);
         _spawnedEnemies = RollForInitiative(_spawnedEnemies);
+
+        DebugList(_spawnedEnemies);
+
         HistoryHandler.AddToCurrentAction("Battle Start!");
         HistoryHandler.FinalizeAction();
     }
 
-    //spawns enemies
-    static void CreateEnemies()
-    {
-        for (int i = 0; i < _enemiesToMake; i++)
-        {
-            Vector2 spawn = GridHandler.GetSpawn();
-            Character newCharacter = new Character("Enemy", (i+1).ToString(), -1, spawn);
-            GridHandler.PlaceEnemyOnBoard(newCharacter);
-            _spawnedEnemies.Add(newCharacter);
-        }
-    }
-
+    //creates Character scripts and adds them to the _spawnedEnemies list
+    //creates an amount dependent on how many the player wants to make
     static void CreateEnemies(int numberOfTeams)
     {
+        _spawnedEnemies = new List<Character>();
         for (int v = 0; v < numberOfTeams; v++)
         {
             for (int i = 0; i < _enemiesToMake; i++)
@@ -70,30 +42,41 @@ public static class FightHandler
         }
     }
 
+    //debug for debugging all occupants inside of the list that is passed
+    static void DebugList(List<Character> list)
+    {
+        string speedDebug = "";
+        for (int i = 0; i < list.Count; i++)
+        {
+            speedDebug += list[i].Name + ", " + list[i].Team + ", " + list[i].Speed +  ", " + list[i].IsDead + "\n";
+        }
+        //Debug.Log(speedDebug);
+    }
+
+    //called by Init
+    //sorts and returns all the characters based on speed(fastest to slowest)
     static List<Character> RollForInitiative(List<Character> enemies)
     {
-        List<Character> unsortedEnemies = new List<Character>(enemies);
+        List<Character> unsortedEnemies = new List<Character>();
+        unsortedEnemies = enemies;
         List<Character> sortedEnemies = new List<Character>();
 
-        while(sortedEnemies.Count != _spawnedEnemies.Count)
+
+        for (int i = 0; i < enemies.Count; i=0)
         {
             Character temp = unsortedEnemies[0];
-            for (int i = 0; i < unsortedEnemies.Count; i++)
+            for (int j = 0; j < unsortedEnemies.Count; j++)
             {
-                if(enemies[i].Speed > temp.Speed)
+                if (unsortedEnemies[j].Speed > temp.Speed)
                 {
-                    temp = unsortedEnemies[i];
+                    temp = unsortedEnemies[j];
                 }
             }
-            unsortedEnemies.Remove(temp);
             sortedEnemies.Add(temp);
+            unsortedEnemies.Remove(temp);
         }
 
-        /*for (int i = 0; i < sortedEnemies.Count; i++)
-        {
-            Debug.Log(sortedEnemies[i].Name + ", " + sortedEnemies[i].Team + ", " + sortedEnemies[i].Speed);
-        } */
-
+        DebugList(sortedEnemies);
 
         return sortedEnemies;
     }
@@ -102,22 +85,28 @@ public static class FightHandler
     //does not end until 1 enemy is left
     public static void ContinueFight()
     {
-            if(_currentEnemyNum < _spawnedEnemies.Count)
-            {
-                _spawnedEnemies[_currentEnemyNum].TakeAction();
-                HistoryHandler.FinalizeAction(_spawnedEnemies[_currentEnemyNum]);
+        if(_currentEnemyNum < _spawnedEnemies.Count)
+        {
+            _spawnedEnemies[_currentEnemyNum].TakeAction();
+            DebugList(_spawnedEnemies);
+            HistoryHandler.FinalizeAction(_spawnedEnemies[_currentEnemyNum]);
                 
-                _currentEnemyNum++;
-            }
-            else
-            {
-                _currentEnemyNum = 0;
-                ContinueFight();
-            }
+            _currentEnemyNum++;
+        }
+        else
+        {
+            _currentEnemyNum = 0;
+            ContinueFight();
+        }
     }
 
+    //called by HistoryHandler
+    //called by character when they die
+    //checks to see if there is only one person or team left
+    //ends the fight if returns true
     static public bool LastManStanding()
     {
+
         for (int i = 0; i < _spawnedEnemies.Count; i++)
         {
             Character check = _spawnedEnemies[i];
@@ -148,33 +137,36 @@ public static class FightHandler
         }
         else
         {
-            //Debug.Log("1 left");
+            Debug.Log("1 left");
             return true;
         }
     }
 
+    //called by characters
+    //returns a random character to the character that called
+    //returned character cannot be: someone on the same team, the character that called, or a dead character
     static public Character FindRandomEnemy(Character me, int teamNum)
     {
         //Debug.Log("finding enemies");
-        int randNum = Random.Range(0, _spawnedEnemies.Count);
+        List<Character> actualTargets = new List<Character>();
 
-        try
+        for (int i = 0; i < _spawnedEnemies.Count; i++)
         {
-            while (me == _spawnedEnemies[randNum] || _spawnedEnemies[randNum].IsDead || _spawnedEnemies[randNum].Team == teamNum)
+            if(me != _spawnedEnemies[i] && !_spawnedEnemies[i].IsDead && _spawnedEnemies[i].Team != teamNum)
             {
-               
-                randNum = Random.Range(0, _spawnedEnemies.Count);
+                actualTargets.Add(_spawnedEnemies[i]);
             }
         }
-        catch
-        {
-            //Debug.Log("died in finding");
-        }
 
-        return _spawnedEnemies[randNum];
+        int randNum = Random.Range(0, actualTargets.Count);
+
+        //Debug.Log(actualTargets[randNum].Name);
+        return actualTargets[randNum];
     }
 
-    //Attack a random Enemy
+    //called by characters
+    //asks FightHandler to check for hit/crit/miss
+    //FightHandler passes string of result to HistoryHandler
     static public void AttackEnemy(Character attacker, Character target)
     {
         //Debug.Log("attack called");

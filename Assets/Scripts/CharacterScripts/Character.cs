@@ -86,18 +86,18 @@ public class Character
         _myTeamNumber = teamNumber;
         _myName = name + tileMoniker;
         _myTileInfo = tileMoniker;
-        _myHealth = Random.Range(50, 201);
+        _myHealth = Random.Range(50, 301);
         _myMaxHealth = _myHealth; 
         _myMana = 100;
         _myMaxMana = 100;
 
-        int _myStrength = Random.Range(5, 20);
-        int _myMagic = Random.Range(5, 20);
+        int _myStrength = Random.Range(5, 41);
+        int _myMagic = Random.Range(5, 41);
         int _myAccuracy = Random.Range(10, 101);
         int _myCritChance = Random.Range(10, 101);
         _myOffense = new AttackStats(_myStrength, _myMagic, _myAccuracy, _myCritChance);
 
-        int _baseDef = Random.Range(10, 51);
+        int _baseDef = Random.Range(10, 31);
         int _physRes = UnityEngine.Random.Range(-100, 101);
         int _fireRes = Random.Range(-100, 101);
         int _iceRes = Random.Range(-100, 101);
@@ -189,8 +189,8 @@ public class Character
     {
         if(!_dead)
         {
+            //Debug.Log(Name + "Action Taken");
             _stratRef.WhatDo();
-            //Debug.Log("Action Taken");
         }
     }
 
@@ -207,44 +207,20 @@ public class Character
     //follows path for as long as it has movement
     public void Move(Character target)
     {
-        _myMoves = GridHandler.WhereCanIMove(_gridPos, _myMovement);
+        _myMoves = GridHandler.GetShortestMoves(this, target.CurrentPosition);
         LastAttacker = target;
-        Vector2 movingTo = CurrentPosition;
-
-        for (int i = 0; i < _myMoves.Count; i++)
+        if(_myMoves.Count > Movement)
         {
-            if (target.CurrentPosition.x >= _gridPos.x && target.CurrentPosition.y >= _gridPos.y)
-            {
-                if (_myMoves[i].x >= movingTo.x && _myMoves[i].y >= movingTo.y)
-                {
-                    movingTo = _myMoves[i];
-                }
-            }
-            else if (target.CurrentPosition.x >= _gridPos.x && target.CurrentPosition.y <= _gridPos.y)
-            {
-                if (_myMoves[i].x >= movingTo.x && _myMoves[i].y <= movingTo.y)
-                {
-                    movingTo = _myMoves[i];
-                }
-            }
-            else if (target.CurrentPosition.x <= _gridPos.x && target.CurrentPosition.y >= _gridPos.y)
-            {
-                if (_myMoves[i].x <= movingTo.x && _myMoves[i].y >= movingTo.y)
-                {
-                    movingTo = _myMoves[i];
-                }
-            }
-            else if (target.CurrentPosition.x <= _gridPos.x && target.CurrentPosition.y <= _gridPos.y)
-            {
-                if (_myMoves[i].x <= movingTo.x && _myMoves[i].y <= movingTo.y)
-                {
-                    movingTo = _myMoves[i];
-                }
-            }
+            GridHandler.MoveEnemy(this, _myMoves[Movement - 1]);
         }
-
-        GridHandler.GetShortestMoves(this, target.CurrentPosition);
-        GridHandler.MoveEnemy(this, movingTo);
+        else if(_myMoves.Count == 0)
+        {
+            GridHandler.MoveEnemy(this, CurrentPosition);
+        }
+        else
+        {
+             GridHandler.MoveEnemy(this, _myMoves[0]);
+        }
     }
 
     //checks for enemies nearby and attacks
@@ -256,13 +232,14 @@ public class Character
             List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, _myWeapon, _myTeamNumber);
             if(_enemiesNearMe.Count > 0)
             {
+                //Debug.Log("attacking random");
                 int randNum = Random.Range(0, _enemiesNearMe.Count);
 
                 FightHandler.AttackEnemy(this, _enemiesNearMe[randNum]);
             }
             else
             {
-                Debug.Log("no enemy");
+                //Debug.Log("no enemy");
             }
         }
     }
@@ -273,6 +250,7 @@ public class Character
     {
         if (GridHandler.CheckForEnemyWithinRange(_gridPos, _myWeapon, _myTeamNumber, currTarget))
         {
+            //Debug.Log("attacking target");
             FightHandler.AttackEnemy(this, currTarget);
         }
         else
@@ -330,13 +308,15 @@ public class Character
         //currSkill.ActivateSkill(this, _enemiesNearMe, currTarget);
     }
 
-
+    //called by FightHandler
+    //calculates damage and subtracts damage from health
+    //if health is less than or equal to 0, character dies
     public void TakeDamage(int damage, DamageType element, bool crit)
     {
         int damageTaken = _myDefenses.CalculateDamage(damage, element, crit);
         _myHealth += damageTaken;
 
-        if(_myHealth < 0)
+        if(_myHealth <= 0)
         {
             HistoryHandler.DeclareDeath(this);
             _dead = true;
@@ -344,6 +324,7 @@ public class Character
     }
 }
 
+//struct for damage variables
 public struct AttackStats
 {
     public int Strength;
@@ -360,6 +341,8 @@ public struct AttackStats
     }
 }
 
+//struct for defense variables
+//also calculates damage taken and pass back to TakeDamage()
 public struct DefenseStats
 {
     public int BaseDefense;
@@ -413,7 +396,7 @@ public struct DefenseStats
                 break;
         }
 
-        actualDamage = (int)(/*BaseDefense*/0 - (damage * (1 - (currResistance / 100))));
+        actualDamage = (int)(BaseDefense - (damage * (1 - (currResistance / 100))));
 
         //Debug.Log(actualDamage);
 

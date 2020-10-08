@@ -1,6 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+//using System.Numerics;
+//using System.Numerics;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public static class GridHandler
 {
@@ -10,6 +12,11 @@ public static class GridHandler
     static int[,] _moveGrid;
     static int[,] _distanceGrid;
     static bool[,] _visitCheckGrid;
+
+    // direction arrays for simplification of getting 
+    // neighbour 
+    static int[] dx = { -1, 0, 1, 0 };
+    static int[] dy = { 0, 1, 0, -1 };
 
     public static void CreateNewGrid(int numOfRows, int numOfColms)
     {
@@ -392,11 +399,7 @@ public static class GridHandler
             movingCharacter.CurrentPosition = desiredPos;
             _battleGrid[(int)desiredPos.x, (int)desiredPos.y] = movingCharacter;
         }
-        else if (movingCharacter.SpacesICanMove.Count == 1)
-        {
-            HistoryHandler.AddToCurrentAction(movingCharacter.Name + " CAN'T MOVE \n");
-        }
-        else
+        else if (movingCharacter.CurrentPosition == desiredPos)
         {
             HistoryHandler.AddToCurrentAction(movingCharacter.Name + " STANDS IN PLACE \n");
         }
@@ -421,21 +424,22 @@ public static class GridHandler
 
     public static void SwapEnemies(List<Character> enemiesToFuckWith)
     {
-        int rand1 = 0, rand2 = 0;
+        List<Character> enemies = new List<Character>();
+        enemies = enemiesToFuckWith;
 
+        int rand1 = 0, rand2 = 0;
 
         for (int i = 0; i < enemiesToFuckWith.Count; i++)
         {
-            while (rand1 == rand2)
-            {
-                rand1 = Random.Range(0, enemiesToFuckWith.Count);
-                rand2 = Random.Range(0, enemiesToFuckWith.Count);
-            }
+            rand1 = Random.Range(0, enemiesToFuckWith.Count);
+            Character temp1 = enemies[rand1];
+            enemies.Remove(temp1);
 
-            SwapEnemies(enemiesToFuckWith[rand1], enemiesToFuckWith[rand2]);
+            rand2 = Random.Range(0, enemiesToFuckWith.Count); 
+            Character temp2 = enemies[rand2];
+            enemies.Add(temp1);
 
-            rand1 = 0;
-            rand2 = 0;
+            SwapEnemies(temp1, temp2);
         }
     }
 
@@ -530,124 +534,212 @@ public static class GridHandler
 
     }
 
-    public static void GetShortestMoves(Character moveableChar, Vector2 targetedSpace)
+    public static List<Vector2> GetShortestMoves(Character moveableChar, Vector2 targetedSpace)
     {
-        Shortest(moveableChar.CurrentPosition, targetedSpace);
-        
-
+        //Debug.Log(moveableChar.GetInfoIdentifier + " --> " + targetedSpace);
+        return UseDijkstra(moveableChar.CurrentPosition, targetedSpace);
     }
-
-    static bool CompareSpace(Vector2 a, Vector2 b) 
-    {
-        if (_terrainGrid[(int)a.x,(int)a.y].GetTerrainCost == _terrainGrid[(int)b.x, (int)b.y].GetTerrainCost) 
-        { 
-            if (a.x != b.x) 
-                return (a.x < b.x); 
-            else
-                return (a.y < b.y); 
-        } 
-        return (_terrainGrid[(int)a.x, (int)a.y].GetTerrainCost < _terrainGrid[(int)b.x, (int)b.y].GetTerrainCost); 
-    } 
-
 
     // Method returns minimum cost to reach bottom 
     // right from top left 
-    static int Shortest(Vector2 startPos, Vector2 endPos)
+    static List<Vector2> UseDijkstra(Vector2 startPos, Vector2 endPos)
     {
-  
-        // initializing distance array by INT_MAX 
-        for (int i = 0; i < _battleGrid.GetLength(0); i++) 
-            for (int j = 0; j < _battleGrid.GetLength(1); j++) 
-                _distanceGrid[i,j] = 1000; 
-  
-        // direction arrays for simplification of getting 
-        // neighbour 
-        int[] dx = { -1, 0, 1, 0 };
-        int[] dy = { 0, 1, 0, -1 };
+        Vector2 checkingEnd = endPos;
 
-        List<Vector2> st = new List<Vector2>();
+        // initializing distance array by INT_MAX 
+        for (int i = 0; i < _battleGrid.GetLength(0); i++)
+        {
+            for (int j = 0; j < _battleGrid.GetLength(1); j++)
+            {
+                _distanceGrid[i, j] = 1000;
+            }
+        }
+
+
+        List<Vector2> CalculatingTiles = new List<Vector2>();
+        List<Vector2> TotalTiles = new List<Vector2>();
 
         // insert (0, 0) cell with 0 distance 
-        st.Add(new Vector2((int)startPos.x,(int) startPos.y));
+        CalculatingTiles.Add(startPos);
+        TotalTiles.Add(startPos);
 
         // initialize distance of (0, 0) with its grid value 
-        _distanceGrid[(int)startPos.x, (int)startPos.y] = _terrainGrid[(int)startPos.x, (int)startPos.y].GetTerrainCost; 
+        _distanceGrid[(int)startPos.x, (int)startPos.y] = 0; 
   
-            // loop for standard dijkstra's algorithm 
-            while (st.Count > 0) 
-            { 
-                // get the cell with minimum distance and delete 
-                // it from the set 
-                Vector2 k = st[0];
-                st.RemoveAt(0); 
+        // loop for standard dijkstra's algorithm 
+        while (CalculatingTiles.Count > 0) 
+        {
+            // get the cell with minimum distance and delete 
+            // it from the set
+
+            Vector2 checkingPoint = CalculatingTiles[0];
+            CalculatingTiles.RemoveAt(0);
+            
   
             // looping through all neighbours 
             for (int i = 0; i< 4; i++) 
             { 
-                    int x = (int)k.x + dx[i];
-                    int y = (int)k.y + dy[i]; 
-  
+                int x = (int)checkingPoint.x + dx[i];
+                int y = (int)checkingPoint.y + dy[i];
+                Vector2 check = new Vector2(x, y);
+
                 // if not inside boundary, ignore them 
-                if (!IsInsideGrid(x, y)) 
-                    continue; 
-  
+                if (!IsInsideGrid(x, y))
+                {
+                    continue;
+                }
+
                 // If distance from current cell is smaller, then 
                 // update distance of neighbour cell 
-                if (_distanceGrid[x,y] > _distanceGrid[(int)k.x,(int)k.y] + _terrainGrid[x,y].GetTerrainCost) 
-                { 
+                if (_distanceGrid[x,y] > _distanceGrid[(int)checkingPoint.x,(int)checkingPoint.y] + _terrainGrid[x,y].GetTerrainCost) 
+                {
                     // If cell is already there in set, then 
                     // remove its previous entry 
-                    if (_distanceGrid[x,y] != 1000)
+                    if (_distanceGrid[x, y] != 1000)
                     {
-                        int num = GetListPlaceFromValue(st, new Vector2(x, y));
-                        if (num != -1)
+                        if (CalculatingTiles.Contains(check))
                         {
-                            st.RemoveAt(num);
+                            //Debug.Log("Removed vector: " + st[num]);
+                            CalculatingTiles.Remove(check);
                         }
                     }
 
                     // update the distance and insert new updated 
                     // cell in set 
-                    _distanceGrid[x,y] = _distanceGrid[(int)k.x, (int)k.y] + _terrainGrid[x,y].GetTerrainCost; 
-                    
-                    st.Add(new Vector2(x,y)); 
-                } 
-            } 
+                    _distanceGrid[x, y] = _distanceGrid[(int)checkingPoint.x, (int)checkingPoint.y] + _terrainGrid[x, y].GetTerrainCost;
+
+                    // Debug.Log("added vector: " + x + ", " + y);
+                    CalculatingTiles.Add(check);
+                    TotalTiles.Add(check);
+                }
+            }
+
+            //Debug.Log(st[st.Count - 1].ToString() + "--> " + endPos);
+            if (CalculatingTiles.Contains(checkingEnd))
+            {
+                //Debug.Log("exit dijkstra");
+
+
+                break;
+            }
         }
 
+        AddEnemiesToDistanceMap(startPos);
+
         // print distance of each cell from (0, 0) 
+        /*
         string debug = "";
 
         for (int j = 0; j < _distanceGrid.GetLength(1); j++)
         {
             for (int i = 0; i < _distanceGrid.GetLength(0); i++)
             {
-                debug += "[" + _distanceGrid[i, j] + "] ";
+                if(_distanceGrid[i,j] == 1000)
+                {
+                    debug += "[/] ";
+                }
+                else
+                {
+                    debug += "[" + _distanceGrid[i, j] + "] ";
+                }
             }
             debug += "\n";
         }
 
         Debug.Log(debug);
+        */
 
 
-        // dis[row - 1][col - 1] will represent final 
-        // distance of bottom right cell from top left cell
-        Debug.Log(_distanceGrid[(int)endPos.x, (int)endPos.y] + ", " + endPos);
-        return _distanceGrid[(int)endPos.x,(int)endPos.y]; 
+        return GetShortestPath(startPos, checkingEnd); 
     }
 
-    static int GetListPlaceFromValue(List<Vector2> d, Vector2 thing)
+    //After Dijkstra
+    //"hollow out" spaces that have characters on them except for the player trying to move
+    static void AddEnemiesToDistanceMap(Vector2 characterPostion)
     {
-        for (int i = 0; i < d.Count; i++)
+        for (int i = 0; i < _distanceGrid.GetLength(1); i++)
         {
-            if(d[i] == thing)
+            for (int j = 0; j < _distanceGrid.GetLength(0); j++)
             {
-                return i;
+                Vector2 newpos = new Vector2(i, j);
+                if(_battleGrid[i,j] != null && newpos != characterPostion)
+                {
+                    _distanceGrid[i, j] = 1000;
+                }
             }
         }
-
-        return -1;
     }
+
+    //After Distance map is ready(after dijkstra)
+    static List<Vector2> GetShortestPath(Vector2 start, Vector2 end)
+    {
+        //Start actual Path vector list that we will pass back
+        //Start checking vector list for parsing
+        List<Vector2> path = new List<Vector2>();
+        List<Vector2> check = new List<Vector2>();
+        path.Add(start);
+        check.Add(start);
+
+        while(check.Count > 0)
+        {
+            //set space we will check(nextspace) and remove space from check vector list
+            Vector2 currentspace = check[0];
+            Vector2 nextspace = check[0];
+            check.RemoveAt(0);
+
+            for (int i = 0; i < 4; i++)
+            {
+                int x = (int)currentspace.x + dx[i];
+                int y = (int)currentspace.y + dy[i];
+                Vector2 newSpace = new Vector2(x, y);
+                
+                if (!IsInsideGrid(x, y))
+                {
+                    //Debug.Log("spot does not exist");
+                    continue;
+                }
+
+                //Debug.Log(end);
+
+                //check
+                if (_distanceGrid[x, y] < 1000 && !path.Contains(newSpace))
+                {
+                    if(_distanceGrid[x, y] > _distanceGrid[(int)nextspace.x, (int)nextspace.y])
+                    {
+                        nextspace = newSpace;
+                    }
+                    else if (_distanceGrid[x, y] == _distanceGrid[(int)nextspace.x, (int)nextspace.y])
+                    {
+                        if (Vector2.Distance(nextspace, end) > Vector2.Distance(newSpace, end))
+                        {
+                            nextspace = newSpace;
+                        }
+                    }
+                }
+            }
+
+            if(nextspace == end || nextspace == currentspace)
+            {
+                break;
+            }
+
+            check.Add(nextspace);
+            path.Add(nextspace);
+        }
+
+        //remove start, because we arent moving there
+        path.Remove(start);
+        /*
+        string pathDebug = "";
+        for (int i = 0; i < path.Count; i++)
+        {
+            pathDebug += path[i].x + ", " + path[i].y + "\n";
+        }
+        Debug.Log(pathDebug);
+        */
+        return path;
+    }
+
 
     public static List<Vector2> WhereCanIMove(Vector2 startPosition, int movement)
     {
@@ -676,7 +768,6 @@ public static class GridHandler
             }
         }
     }
-
 
     static public void FinalizeGridLayoutForTurn()
     {

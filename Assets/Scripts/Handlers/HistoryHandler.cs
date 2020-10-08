@@ -16,6 +16,7 @@ public static class HistoryHandler
 
     static UIHolder _uiRef;
 
+    //Init called for set-up
     public static void Init(UIHolder reference)
     {
         _uiRef = reference;
@@ -29,6 +30,8 @@ public static class HistoryHandler
 
     }
 
+    //called from characters
+    //adds that character died to the current action before final push
     static public void DeclareDeath(Character deadCharacter)
     {
         AddToCurrentAction(" \n" + deadCharacter.Name + " has been slain!\n");
@@ -63,11 +66,16 @@ public static class HistoryHandler
         _actionSentence = " ";
     }
 
+    //recieves string of map layout
+    //saves layout and puts it on UI from Stack
     static public void SaveCurrentGridLayout(string gridlayout)
     {
         _gridhistory.Push(gridlayout);
     }
     
+    //Current character that acted is passed to this method
+    //saves all parameters and stats of character to string
+    //puts string on UI
     static void SaveCharacterInfo(Character chara)
     {
         string characterInfo = "Team " + chara.Team + "\n";
@@ -194,6 +202,7 @@ public static class HistoryHandler
         }
     }
 
+    //sends back current actionNumber
     static public int GetCurrentActionNumber()
     {
         return _actionsTaken;
