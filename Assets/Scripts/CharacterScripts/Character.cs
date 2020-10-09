@@ -209,18 +209,22 @@ public class Character
     {
         _myMoves = GridHandler.GetShortestMoves(this, target.CurrentPosition);
         LastAttacker = target;
-        if(_myMoves.Count > Movement)
+        if(!GridHandler.CheckForEnemyWithinRange(_gridPos, _myWeapon, _myTeamNumber, _lastToHitMe))
         {
-            GridHandler.MoveEnemy(this, _myMoves[Movement - 1]);
+            if (_myMoves.Count > Movement)
+            {
+                GridHandler.MoveEnemy(this, _myMoves[Movement - 1]);
+            }
+            else if (_myMoves.Count == 0)
+            {
+                GridHandler.MoveEnemy(this, CurrentPosition);
+            }
+            else
+            {
+                GridHandler.MoveEnemy(this, _myMoves[0]);
+            }
         }
-        else if(_myMoves.Count == 0)
-        {
-            GridHandler.MoveEnemy(this, CurrentPosition);
-        }
-        else
-        {
-             GridHandler.MoveEnemy(this, _myMoves[0]);
-        }
+        
     }
 
     //checks for enemies nearby and attacks

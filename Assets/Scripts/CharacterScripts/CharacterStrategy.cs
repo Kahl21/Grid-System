@@ -184,7 +184,7 @@ public class CharacterStrategy
 
             int rand = Random.Range(0, spellsICanUse.Count);
             
-            if(spellsICanUse.Count > 0)
+            if(spellsICanUse.Count > 0 && spellsICanUse[rand].Cost <= _me.CurrMana)
             {
                 _me.UseSkill(spellsICanUse[rand]);
                 _hasAttacked = true;
@@ -202,7 +202,7 @@ public class CharacterStrategy
 
             int rand = Random.Range(0, spellsICanUse.Count);
 
-            if (spellsICanUse.Count > 0)
+            if (spellsICanUse.Count > 0 && spellsICanUse[rand].Cost <= _me.CurrMana)
             {
                 _me.UseSkill(spellsICanUse[rand], target);
                 _hasAttacked = true;
@@ -219,7 +219,7 @@ public class CharacterStrategy
 
             int rand = Random.Range(0, spellsICanUse.Count);
 
-            if (spellsICanUse.Count > 0)
+            if (spellsICanUse.Count > 0 && spellsICanUse[rand].Cost <= _me.CurrMana)
             {
                 _me.UseHeal(spellsICanUse[rand]);
                 _hasAttacked = true;

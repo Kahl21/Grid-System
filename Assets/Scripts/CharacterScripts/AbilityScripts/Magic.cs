@@ -20,6 +20,10 @@ public class Magic : Ability
         for (int i = 0; i < targets.Count; i++)
         {
             int totalDamage = activator.Offense.Magic + activator.HeldWeapon.MagicMod + _damage;
+            if (FightHandler.DoubleDamage)
+            {
+                totalDamage *= 2;
+            }
             HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + ", and DEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " to " + targets[i].Name + "\n");
             targets[i].TakeDamage(totalDamage, _element, false);
         }
@@ -122,7 +126,11 @@ public class Heal : Magic
         for (int i = 0; i < targets.Count; i++)
         {
             int totalDamage = activator.Offense.Magic + activator.HeldWeapon.MagicMod + _damage;
-            if(targets[i] == activator)
+            if (FightHandler.DoubleDamage)
+            {
+                totalDamage *= 2;
+            }
+            if (targets[i] == activator)
             {
                 HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name +  ", and HEALS themselves for " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " Health" + "\n");
             }

@@ -11,7 +11,6 @@ public static class GridHandler
     static TerrainSpace[,] _terrainGrid;
     static int[,] _moveGrid;
     static int[,] _distanceGrid;
-    static bool[,] _visitCheckGrid;
 
     // direction arrays for simplification of getting 
     // neighbour 
@@ -657,9 +656,9 @@ public static class GridHandler
     //"hollow out" spaces that have characters on them except for the player trying to move
     static void AddEnemiesToDistanceMap(Vector2 characterPostion)
     {
-        for (int i = 0; i < _distanceGrid.GetLength(1); i++)
+        for (int j = 0; j < _distanceGrid.GetLength(1); j++)
         {
-            for (int j = 0; j < _distanceGrid.GetLength(0); j++)
+            for (int i = 0; i < _distanceGrid.GetLength(0); i++)
             {
                 Vector2 newpos = new Vector2(i, j);
                 if(_battleGrid[i,j] != null && newpos != characterPostion)

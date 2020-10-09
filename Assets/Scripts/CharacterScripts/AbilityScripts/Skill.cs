@@ -21,6 +21,10 @@ public class Skill : Ability
         for (int i = 0; i < targets.Count; i++)
         {
             int totalDamage = activator.Offense.Strength + activator.HeldWeapon.MagicMod + _damage;
+            if (FightHandler.DoubleDamage)
+            {
+                totalDamage *= 2;
+            }
             HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + ", and DEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " to " + targets[i].Name + "\n");
             targets[i].TakeDamage(totalDamage, _element, false);
         }
@@ -145,7 +149,11 @@ public class HealingPalm : Skill
     }
     public override void ActivateSkill(Character activator, List<Character> targets)
     {
-        int totalDamage = activator.Offense.Strength + activator.HeldWeapon.MagicMod + _damage;
+        int totalDamage = activator.Offense.Strength + activator.HeldWeapon.MagicMod + _damage; 
+        if (FightHandler.DoubleDamage)
+        {
+            totalDamage *= 2;
+        }
         for (int i = 0; i < targets.Count; i++)
         {
             if (targets[i] == activator)
@@ -181,6 +189,10 @@ public class WarpStrike : Skill
         for (int i = 0; i < targets.Count; i++)
         {
             int totalDamage = activator.Offense.Strength + activator.HeldWeapon.MagicMod + _damage;
+            if (FightHandler.DoubleDamage)
+            {
+                totalDamage *= 2;
+            }
             HistoryHandler.AddToCurrentAction(activator.Name + " DEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " damage to " + targets[i].Name + "\n");
             targets[i].TakeDamage(totalDamage, _element, false);
             GridHandler.SwapEnemies(activator, targets[i]);
@@ -208,6 +220,10 @@ public class Yi_Q : Skill
         for (int i = 0; i < targets.Count; i++)
         {
             int totalDamage = activator.Offense.Strength + activator.HeldWeapon.MagicMod + _damage;
+            if (FightHandler.DoubleDamage)
+            {
+                totalDamage *= 2;
+            }
             if (targets[i] != activator)
             {
                 HistoryHandler.AddToCurrentAction(activator.Name + " DEALS " + Mathf.Abs(targets[i].Defense.CalculateDamage(totalDamage, _element, false)).ToString() + " damage to " + targets[i].Name + "\n");

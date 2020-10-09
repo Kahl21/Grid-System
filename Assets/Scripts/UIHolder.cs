@@ -32,6 +32,8 @@ public class UIHolder : MonoBehaviour
     Text _numberOfActionsText;
     [SerializeField]
     Slider _autoSpeedSlider;
+    [SerializeField]
+    GameObject _ddOBJ;
     bool _fightStarted;
 
     [Header("AutoFight Vars")]
@@ -62,6 +64,17 @@ public class UIHolder : MonoBehaviour
         SetGridSizeText();
     }
 
+    public void ResetGame()
+    {
+        _ddOBJ.SetActive(false);
+        _autoFight = false;
+        _autoSpeed = 0;
+        _autoSpeedSlider.value = 0;
+        _autoText.text = "Off";
+        _AFUI.SetActive(false);
+        _BFUI.SetActive(true);
+    }
+
     private void Update()
     {
         if (_fightStarted)
@@ -71,6 +84,10 @@ public class UIHolder : MonoBehaviour
                 _currtime = (Time.time - _starttime) * _autoSpeed;
                 if(_currtime > 1)
                 {
+                    if (FightHandler.DoubleDamage)
+                    {
+                        ActivateDoubleDamage();
+                    }
                     HistoryHandler.AdvanceHistory();
                     SetFightInfo();
                     _starttime = Time.time;
@@ -115,6 +132,11 @@ public class UIHolder : MonoBehaviour
     {
         _autoFight = false;
         _autoText.text = "Off";
+    }
+
+    public void ActivateDoubleDamage()
+    {
+        _ddOBJ.SetActive(true);
     }
 
     //Sets Text to Current Number of Enemies
@@ -228,6 +250,7 @@ public class UIHolder : MonoBehaviour
         HistoryHandler.Init(this);
         FightHandler.Init(_numberOfEnemies, _numberOfTeams);
         _AFUI.SetActive(true);
+        _ddOBJ.SetActive(false);
         SetFightInfo();
         _fightStarted = true;
     }
@@ -249,6 +272,11 @@ public class UIHolder : MonoBehaviour
 
         if (goForwardinHistory)
         {
+            if (FightHandler.DoubleDamage)
+            {
+                ActivateDoubleDamage();
+            }
+
             HistoryHandler.AdvanceHistory();
         }
         else
@@ -257,5 +285,10 @@ public class UIHolder : MonoBehaviour
         }
 
         SetFightInfo();
+    }
+
+    public void EndGame()
+    {
+        Application.Quit();
     }
 }

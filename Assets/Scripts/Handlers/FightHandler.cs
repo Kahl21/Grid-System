@@ -6,16 +6,29 @@ public static class FightHandler
 {
 
     static int _enemiesToMake;
+    static int _teams;
     static int _currentEnemyNum;
 
     static List<Character> _spawnedEnemies;
     public static List<Character> GetEnemies { get { return _spawnedEnemies; } }
 
+    static bool _finalFive;
+    public static bool DoubleDamage { get { return _finalFive; } }
+
     //Called
     public static void Init(int numberOfEnemies, int numberOfTeams)
     {
         _currentEnemyNum = 0;
+        if(numberOfTeams < 4)
+        {
+            _finalFive = true;
+        }
+        else
+        {
+            _finalFive = false;
+        }
         _enemiesToMake = numberOfEnemies;
+        _teams = numberOfTeams;
         CreateEnemies(numberOfTeams);
         _spawnedEnemies = RollForInitiative(_spawnedEnemies);
 
@@ -49,6 +62,16 @@ public static class FightHandler
         for (int i = 0; i < list.Count; i++)
         {
             speedDebug += list[i].Name + ", " + list[i].Team + ", " + list[i].Speed +  ", " + list[i].IsDead + "\n";
+        }
+        //Debug.Log(speedDebug);
+    }
+
+    static void DebugList(List<int> list)
+    {
+        string speedDebug = "";
+        for (int i = 0; i < list.Count; i++)
+        {
+            speedDebug += "Team " + list[i] + "\n";
         }
         //Debug.Log(speedDebug);
     }
@@ -106,7 +129,6 @@ public static class FightHandler
     //ends the fight if returns true
     static public bool LastManStanding()
     {
-
         for (int i = 0; i < _spawnedEnemies.Count; i++)
         {
             Character check = _spawnedEnemies[i];
@@ -122,13 +144,19 @@ public static class FightHandler
             }
         }
 
-        if(_spawnedEnemies.Count > 1)
+        if (!_finalFive)
+        {
+            CheckForFinals();
+        }
+
+        if (_spawnedEnemies.Count > 1)
         {
             Character check = _spawnedEnemies[0];
             for (int i = 0; i < _spawnedEnemies.Count; i++)
             {
                 if (_spawnedEnemies[i].Team != check.Team)
                 {
+                    
                     return false;
                 }
             }
@@ -137,8 +165,35 @@ public static class FightHandler
         }
         else
         {
-            Debug.Log("1 left");
+            //Debug.Log("1 left");
             return true;
+        }
+    }
+
+    static void CheckForFinals()
+    {
+        
+
+        List<int> teamsleft = new List<int>();
+
+        for (int i = 0; i < _spawnedEnemies.Count; i++)
+        {
+            if (!teamsleft.Contains(_spawnedEnemies[i].Team))
+            {
+                teamsleft.Add(_spawnedEnemies[i].Team);
+            }
+        }
+
+        //Debug.Log("Current: " + teamsleft.Count + ", Total: " + _teams);
+
+        if(teamsleft.Count <= (_teams / 2) || _spawnedEnemies.Count < (_enemiesToMake / 3))
+        {
+            //Debug.Log("finals started");
+            _finalFive = true;
+        }
+        else
+        {
+            _finalFive = false;
         }
     }
 
@@ -164,6 +219,8 @@ public static class FightHandler
         return actualTargets[randNum];
     }
 
+
+
     //called by characters
     //asks FightHandler to check for hit/crit/miss
     //FightHandler passes string of result to HistoryHandler
@@ -175,9 +232,16 @@ public static class FightHandler
 
         //add what took place on the turn (HIT, CRIT, or MISS)
         int randNum = Random.Range(0, 100);
+
         if(attacker.Offense.Accuracy > randNum || randNum == 0)
         {
             int damage = attacker.Offense.Strength + attacker.HeldWeapon.StrengthMod;
+
+            if (_finalFive)
+            {
+                damage *= 2;
+            }
+            
             randNum = Random.Range(0, 100);
             if (attacker.Offense.CriticalChance > randNum || randNum == 0)
             {

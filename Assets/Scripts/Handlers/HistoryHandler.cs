@@ -11,7 +11,7 @@ public static class HistoryHandler
     static Stack<string> _characterInfo;
     static Stack<string> _alteredCharacterInfo;
 
-    static int _actionsTaken = 0;
+    static int _actionsTaken;
     static string _actionSentence;
 
     static UIHolder _uiRef;
@@ -20,6 +20,7 @@ public static class HistoryHandler
     public static void Init(UIHolder reference)
     {
         _uiRef = reference;
+        _actionsTaken = 0;
         _history = new Stack<string>();
         _alteredHistory = new Stack<string>();
         _gridhistory = new Stack<string>();
