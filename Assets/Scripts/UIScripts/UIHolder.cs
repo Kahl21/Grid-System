@@ -13,6 +13,10 @@ public enum PlayerClasses
 
 public class UIHolder : MonoBehaviour
 {
+    //singleton
+    static UIHolder _uiInstance;
+    public static UIHolder UIInstance { get { return _uiInstance; }}
+
     //character Select UI
     CharacterSelectUI _csUI;
 
@@ -25,15 +29,23 @@ public class UIHolder : MonoBehaviour
 
     //Fight UI
     BattleUI _battleUI;
+    public BattleUI GetBattleUI { get { return _battleUI; } }
     CameraFollow _gridCamera;
-
-    bool _castingForClicks = false, _inBattle = false;
 
     RenderTexture _textureforgridcam;
 
     //Init is the first thing that happens
     private void Awake()
     {
+        if (_uiInstance != null && _uiInstance != this)
+        {
+            Destroy(this.gameObject);
+        }
+        else
+        {
+            _uiInstance = this;
+        }
+
         SpellBook.LoadSpellBook();
         LoadUIRefs();
         _csUI.gameObject.SetActive(true);
@@ -73,7 +85,7 @@ public class UIHolder : MonoBehaviour
 
         _csUI.gameObject.SetActive(false);
 
-        _gridUI.Init(this, _battleUI);
+        _gridUI.Init();
         _gridUI.gameObject.SetActive(true);
     }
 
@@ -93,12 +105,13 @@ public class UIHolder : MonoBehaviour
         //HistoryHandler.Init(this);
         FightHandler.Init(enemies, _playerCharacters);
         _battleUI.gameObject.SetActive(true);
-        _battleUI.Init(this, _gridCamera);
-        _castingForClicks = false;
-        GridHandler.StopSelection();
+        _battleUI.Init(_gridCamera);
+        WorldGridHandler.WorldInstance.ResetPanels();
         //Debug.Log("starting Player Control");
-        _inBattle = true;
     }
 
-   
+    public void FightEnd()
+    {
+
+    }
 }

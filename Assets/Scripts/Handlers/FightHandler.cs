@@ -11,55 +11,55 @@ public enum TeamType
 
 public static class FightHandler
 {
+    static UIHolder _uiRef;
 
     static int _enemiesToMake;
-    static int _currentEnemyNum;
 
     static List<Character> _spawnedCharacters;
-    public static List<Character> GetEnemies { get { return _spawnedCharacters; } }
+    public static List<Character> GetAllCharacters { get { return _spawnedCharacters; } }
    // static List<Character> _turnOrder;
    // public static List<Character> GetTurnOrder;
 
     //Base Constructor
     public static void Init()
     {
+        _uiRef = UIHolder.UIInstance;
         _enemiesToMake = 2;
-        _currentEnemyNum = 0;
         _spawnedCharacters = new List<Character>();
         CreateEnemies();
     }
 
-    //Constructor if UI is used
+    //"Constructor" if UI is used
     public static void Init(int numberOfEnemies)
     {
-        _currentEnemyNum = 0;
+        _uiRef = UIHolder.UIInstance;
         _enemiesToMake = numberOfEnemies;
         _spawnedCharacters = new List<Character>();
         CreateEnemies();
-        HistoryHandler.AddToCurrentAction("Battle Start!");
-        HistoryHandler.FinalizeAction();
+        //HistoryHandler.AddToCurrentAction("Battle Start!");
+        //HistoryHandler.FinalizeAction();
     }
 
     public static void Init(int numberOfEnemies, int numberOfTeams)
     {
-        _currentEnemyNum = 0;
+        _uiRef = UIHolder.UIInstance;
         _enemiesToMake = numberOfEnemies;
         _spawnedCharacters = new List<Character>();
         CreateEnemies(numberOfTeams);
         _spawnedCharacters = RollForInitiative(_spawnedCharacters);
-        HistoryHandler.AddToCurrentAction("Battle Start!");
-        HistoryHandler.FinalizeAction();
+        //HistoryHandler.AddToCurrentAction("Battle Start!");
+        //HistoryHandler.FinalizeAction();
     }
 
     public static void Init(int numberOfEnemies, List<DraggableCharacter> playerstospawn)
     {
-        _currentEnemyNum = 0;
+        _uiRef = UIHolder.UIInstance;
         _enemiesToMake = numberOfEnemies;
         _spawnedCharacters = new List<Character>();
         CreatePlayerTeam(playerstospawn);
         CreateEnemies(numberOfEnemies);
         _spawnedCharacters = RollForInitiative(_spawnedCharacters);
-        HistoryHandler.AddToCurrentAction("Battle Start!");
+        //HistoryHandler.AddToCurrentAction("Battle Start!");
         //HistoryHandler.FinalizeAction();
     }
 
@@ -69,7 +69,7 @@ public static class FightHandler
         for (int i = 0; i < _enemiesToMake; i++)
         {
             Vector2 spawn = GridHandler.GetSpawn(false);
-            Character newCharacter = new Character("Enemy", (i+1).ToString(), TeamType.ENEMY, spawn);
+            Character newCharacter = new EnemyClass("Enemy", (i+1).ToString(), TeamType.ENEMY, spawn);
             GridHandler.PlaceEnemyOnBoard(newCharacter);
             _spawnedCharacters.Add(newCharacter);
         }
@@ -79,7 +79,7 @@ public static class FightHandler
         for (int i = 0; i < _enemiesToMake; i++)
         {
             Vector2 spawn = GridHandler.GetSpawn(false);
-            Character newCharacter = new Character("Enemy", (i + 1).ToString(), TeamType.ENEMY, spawn);
+            Character newCharacter = new EnemyClass("Enemy", (i + 1).ToString(), TeamType.ENEMY, spawn);
             GridHandler.PlaceEnemyOnBoard(newCharacter);
             _spawnedCharacters.Add(newCharacter);
         }
@@ -150,40 +150,11 @@ public static class FightHandler
         return sortedEnemies;
     }
 
-    //Starts the fight and asks enemies what they want to do
-    //does not end until 1 enemy is left
-    public static void ContinueFight()
+    static public void CheckForEnd(Character removable)
     {
-            if(_currentEnemyNum < _spawnedCharacters.Count)
-            {
-                _spawnedCharacters[_currentEnemyNum].StartTurn();
-                HistoryHandler.FinalizeAction(_spawnedCharacters[_currentEnemyNum]);
-                
-                _currentEnemyNum++;
-            }
-            else
-            {
-                _currentEnemyNum = 0;
-                ContinueFight();
-            }
-    }
-
-    static public bool LastManStanding()
-    {
-        for (int i = 0; i < _spawnedCharacters.Count; i++)
-        {
-            Character check = _spawnedCharacters[i];
-            if(check.IsDead)
-            {
-                GridHandler.ClearSpace(check.CurrentPosition);
-                _spawnedCharacters.Remove(check);
-                if (_currentEnemyNum >= i)
-                {
-                    i--;
-                    _currentEnemyNum--;
-                }
-            }
-        }
+        Debug.Log("ending called");
+        GridHandler.ClearSpace(removable.CurrentPosition);
+        _spawnedCharacters.Remove(removable);
 
         if(_spawnedCharacters.Count > 1)
         {
@@ -192,16 +163,14 @@ public static class FightHandler
             {
                 if (_spawnedCharacters[i].Team != check.Team)
                 {
-                    return false;
+                    return;
                 }
             }
-
-            return true;
         }
         else
         {
             //Debug.Log("1 left");
-            return true;
+            
         }
     }
 
@@ -231,48 +200,65 @@ public static class FightHandler
     {
         //Debug.Log("attack called");
         //add beginning of statment
-        HistoryHandler.AddToCurrentAction(attacker.Name + " attacks " + target.Name);
+        //HistoryHandler.AddToCurrentAction(attacker.Name + " attacks " + target.Name);
 
         //add what took place on the turn (HIT, CRIT, or MISS)
         int randNum = Random.Range(0, 100);
 
         string damageString = "";
-        bool isCrit = false;
 
         if(attacker.Offense.Accuracy > randNum || randNum == 0)
         {
             int damage = attacker.Offense.Strength + attacker.HeldWeapon.StrengthMod;
+            string tempDamage = damage.ToString();
             randNum = Random.Range(0, 100);
-            if (attacker.Offense.CriticalChance > randNum)
+            if (attacker.Offense.CriticalChance > randNum || randNum == 0)
             {
-                isCrit = true;
+                damage *= 2;
+                tempDamage = damage.ToString() + "!";
                 //HistoryHandler.AddToCurrentAction("and CRITS for " + Mathf.Abs(target.Defense.CalculateDamage(damage, attacker.HeldWeapon.WeaponElement, true)).ToString() + "\n");
             }
 
-            damageString += target.Defense.CalculateDamage(damage, attacker.HeldWeapon.WeaponElement, isCrit).ToString();
-            if (isCrit)
-            {
-                damageString += "!";
-            }
+            int finalDamage = target.Defense.CalculateDamage(damage, attacker.HeldWeapon.WeaponElement);
+            
 
-            target.TakeDamage(damage, attacker.HeldWeapon.WeaponElement, isCrit);
+            target.TakeDamage(finalDamage);
             target.LastAttacker = attacker;
         }
         else
         {
             damageString = "MISS";
         }
-        GridHandler.CreateDamage(target.CurrentPosition, damageString);
+        WorldGridHandler.WorldInstance.SpawnDamageUI(target.CurrentPosition, damageString);
+        CheckDeath(target);
     }
 
-    static public void AbilityEnemy(int damage, DamageType element,  Character target)
+    static public void AbilityEnemy(int damage, DamageType element, Character target)
     {
         string damageString = "";
 
-        target.TakeDamage(damage, element, false);
+        int FinalDamage = target.Defense.CalculateDamage(damage, element);
 
-        damageString += target.Defense.CalculateDamage(damage, element, false).ToString();
+        target.TakeDamage(FinalDamage);
 
-        GridHandler.CreateDamage(target.CurrentPosition, damageString);
+        damageString += FinalDamage;
+
+        WorldGridHandler.WorldInstance.SpawnDamageUI(target.CurrentPosition, damageString);
+        CheckDeath(target);
+    }
+
+    static private void CheckDeath(Character check)
+    {
+        Debug.Log("Death called");
+        if(check.CurrHealth <= 0)
+        {
+            Debug.Log("character dead");
+            CheckForEnd(check);
+        }
+    }
+
+    static public void ForceEndTurn()
+    {
+        WorldGridHandler.WorldInstance.CharacterForceEnd();
     }
 }

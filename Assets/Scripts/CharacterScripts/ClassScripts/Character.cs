@@ -6,11 +6,15 @@ using UnityEngine;
 
 public class Character
 {
-    protected CharacterStrategy _stratRef;
-    public CharacterStrategy Strategy { get { return _stratRef; } }
+
+    protected Strategy _stratRef;
+    public Strategy Strategy { get { return _stratRef; } }
 
     protected TeamType _myTeam;
     public TeamType Team { get { return _myTeam; } }
+
+    protected string _myClassName;
+    public string ClassName { get { return _myClassName; } }
 
     protected string _myName;
     public string Name { get { return _myName; } }
@@ -72,6 +76,7 @@ public class Character
     public Character()
     {
         _myName = "Bert";
+        _myClassName = "Default";
         _myHealth = 100;
         _myMaxHealth = 100; 
         
@@ -86,7 +91,6 @@ public class Character
         _mySpeed = 10;
         _myMovement = 2;
         _gridPos = Vector2.zero;
-        _stratRef = new CharacterStrategy();
         _dead = false;
     }
 
@@ -94,20 +98,21 @@ public class Character
     public Character(string name, string tileMoniker, TeamType team, Vector2 startPos)
     {
         _myTeam = team;
+        _myClassName = "Default";
         _myName = name + tileMoniker;
         _myTileInfo = tileMoniker;
         _myHealth = UnityEngine.Random.Range(50, 201);
         _myMaxHealth = _myHealth; 
-        _myMana = 100;
-        _myMaxMana = 100;
+        _myMana = UnityEngine.Random.Range(50, 201);
+        _myMaxMana = _myMana;
 
-        int _myStrength = UnityEngine.Random.Range(5, 20);
-        int _myMagic = UnityEngine.Random.Range(5, 20);
+        int _myStrength = UnityEngine.Random.Range(5, 10);
+        int _myMagic = UnityEngine.Random.Range(5, 10);
         int _myAccuracy = UnityEngine.Random.Range(10, 101);
         int _myCritChance = UnityEngine.Random.Range(10, 101);
         _myOffense = new AttackStats(_myStrength, _myMagic, _myAccuracy, _myCritChance);
 
-        int _baseDef = UnityEngine.Random.Range(10, 51);
+        int _baseDef = UnityEngine.Random.Range(10, 11);
         int _physRes = UnityEngine.Random.Range(-100, 101);
         int _fireRes = UnityEngine.Random.Range(-100, 101);
         int _iceRes = UnityEngine.Random.Range(-100, 101);
@@ -144,7 +149,6 @@ public class Character
         _mySpeed = UnityEngine.Random.Range(1, 101);
         _myMovement = UnityEngine.Random.Range(1, 3);
         _gridPos = startPos;
-        _stratRef = new CharacterStrategy(this);
         _dead = false;
     }
 
@@ -152,6 +156,7 @@ public class Character
     public Character(string name, string tileMoniker, TeamType team, int hp, int mp, int att, int mag, int acc, int crit, int baseDef, int PhysRes, int fireRes, int iceRes, int thunRes, int lightRes, int darkRes,  int speed,  int move, Weapons weapon, Vector2 startPos)
     {
         _myTeam = team;
+        _myClassName = "Default";
         _myName = name + tileMoniker;
         _myTileInfo = tileMoniker;
         _myHealth = hp;
@@ -189,120 +194,64 @@ public class Character
         _mySpeed = speed;
         _myMovement = move;
         _gridPos = startPos;
-        _stratRef = new CharacterStrategy(this);
         _dead = false;
     }
 
     //Main method called
     //starts this units turn
-    public void StartTurn()
+    public virtual void StartTurn()
     {
-        if(!_dead)
-        {
-            //_stratRef.WhatDo();
-            _currMovement = _myMovement;
-            _stratRef.HasAttacked = false;
-            //Debug.Log("Action Taken");
-        }
     }
 
-    public void Move()
+    //Moves unit randomly to any space it can travel
+    public virtual void Move()
     {
-        GridHandler.ShowReleventGrid(_gridPos, _currMovement, Color.cyan, Actions.MOVE);
-    }
-
-    public bool CheckForMoreMove(int xpos, int ypos)
-    {
-        int moveDiff = GridHandler.GetDistanceMoved(xpos, ypos) - _currMovement;
-        _currMovement += moveDiff;
-        if(_currMovement >= 1)
-        {
-            Move();
-            return false;
-        }
-        else
-        {
-            return true;
-        }
     }
 
     //Moves towards the targeted Unit
     //Uses Dijstrka to find its path (not implemented)
     //follows path for as long as it has movement
-    public void Move(Character target)
+    public virtual void Move(Character target)
     {
-        _myMoves = GridHandler.WhereCanIMove(_gridPos, _myMovement);
-        LastAttacker = target;
-        Vector2 movingTo = CurrentPosition;
-
-        for (int i = 0; i < _myMoves.Count; i++)
-        {
-            if (target.CurrentPosition.x >= _gridPos.x && target.CurrentPosition.y >= _gridPos.y)
-            {
-                if (_myMoves[i].x >= movingTo.x && _myMoves[i].y >= movingTo.y)
-                {
-                    movingTo = _myMoves[i];
-                }
-            }
-            else if (target.CurrentPosition.x >= _gridPos.x && target.CurrentPosition.y <= _gridPos.y)
-            {
-                if (_myMoves[i].x >= movingTo.x && _myMoves[i].y <= movingTo.y)
-                {
-                    movingTo = _myMoves[i];
-                }
-            }
-            else if (target.CurrentPosition.x <= _gridPos.x && target.CurrentPosition.y >= _gridPos.y)
-            {
-                if (_myMoves[i].x <= movingTo.x && _myMoves[i].y >= movingTo.y)
-                {
-                    movingTo = _myMoves[i];
-                }
-            }
-            else if (target.CurrentPosition.x <= _gridPos.x && target.CurrentPosition.y <= _gridPos.y)
-            {
-                if (_myMoves[i].x <= movingTo.x && _myMoves[i].y <= movingTo.y)
-                {
-                    movingTo = _myMoves[i];
-                }
-            }
-            
-        }
-
-        GridHandler.MoveEnemy(this, movingTo);
     }
 
-    public void StartAttack()
+    public virtual bool CheckForMoreMove(int xpos, int ypos)
+    {
+        return false;
+    }
+
+    public virtual void StartAttack()
     {
         GridHandler.ShowReleventGrid(_gridPos, _myWeapon.Range, Color.red, Actions.ATTACK);
     }
 
-    public void Attack(Character target)
+    public virtual void Attack(Character target)
     {
         FightHandler.AttackEnemy(this, target);
     }
 
-        //checks for enemies nearby and attacks
-        //indiscriminately
-        /*public void Attack()
+    //checks for enemies nearby and attacks
+    //indiscriminately
+    /*public void Attack()
+    {
+        if (GridHandler.CheckForEnemyWithinRange(_gridPos, _myWeapon, _myTeam))
         {
-            if (GridHandler.CheckForEnemyWithinRange(_gridPos, _myWeapon, _myTeam))
+            List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, _myWeapon, _myTeam);
+            if(_enemiesNearMe.Count > 0)
             {
-                List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, _myWeapon, _myTeam);
-                if(_enemiesNearMe.Count > 0)
-                {
-                    int randNum = Random.Range(0, _enemiesNearMe.Count);
+                int randNum = Random.Range(0, _enemiesNearMe.Count);
 
-                    FightHandler.AttackEnemy(this, _enemiesNearMe[randNum]);
-                }
-                else
-                {
-                    Debug.Log("no enemy");
-                }
+                FightHandler.AttackEnemy(this, _enemiesNearMe[randNum]);
             }
-        }*/
+            else
+            {
+                Debug.Log("no enemy");
+            }
+        }
+    }*/
 
-        //attacks target if it is in range
-        //if calls base attack method
+    //attacks target if it is in range
+    //if calls base attack method
     /*public void Attack(Character currTarget)
     {
         if (GridHandler.CheckForEnemyWithinRange(_gridPos, _myWeapon, _myTeam, currTarget))
@@ -318,7 +267,7 @@ public class Character
     //Use Skill passed to it
     //gets all enemies near and blindly choose one to hit
     //regardless of Spell Shape
-    public void UseSkill(Ability currSkill)
+    public virtual void UseSkill(Ability currSkill)
     {
         List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, currSkill, _myTeam); 
         int rand = UnityEngine.Random.Range(0, _enemiesNearMe.Count);
@@ -334,7 +283,7 @@ public class Character
     //Use Skill passed to it
     //gets the enemy that is being targeted
     //checks the splash zone for collatoral
-    public void UseSkill(Ability currSkill, Character currTarget)
+    public virtual void UseSkill(Ability currSkill, Character currTarget)
     {
         List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, currSkill, _myTeam, currTarget);
 
@@ -349,7 +298,7 @@ public class Character
 
     //Use heal Skill passed to it
     //gets al enemies near and blindly choose one to hit
-    public void UseHeal(Ability currSkill)
+    public virtual void UseHeal(Ability currSkill)
     {
         List<Character> _enemiesNearMe = new List<Character>();
         _enemiesNearMe.Add(this);
@@ -358,23 +307,16 @@ public class Character
 
     //Use Heal Skill passed to it
     //gets all Allies nearby and chooses one with the least health
-    public void UseHeal(Ability currSkill, Character currTarget)
+    public virtual void UseHeal(Ability currSkill, Character currTarget)
     {
         //List<Character> _enemiesNearMe = GridHandler.GetAlliesinRange(_gridPos, currSkill);
         //currSkill.ActivateSkill(this, _enemiesNearMe, currTarget);
     }
 
 
-    public void TakeDamage(int damage, DamageType element, bool crit)
-    {
-        int damageTaken = _myDefenses.CalculateDamage(damage, element, crit);
-        _myHealth += damageTaken;
-
-        if(_myHealth < 0)
-        {
-            //HistoryHandler.DeclareDeath(this);
-            _dead = true;
-        }
+    public virtual void TakeDamage(int damage) 
+    { 
+        _myHealth += damage;
     }
 }
 
@@ -415,7 +357,7 @@ public struct DefenseStats
         DarkRes = darkRes;
     }
 
-    public int CalculateDamage(int damage, DamageType damageType, bool crit)
+    public int CalculateDamage(int damage, DamageType damageType)
     {
         int actualDamage = 0;
         float currResistance = 0;
@@ -440,26 +382,22 @@ public struct DefenseStats
             case DamageType.DARK:
                 currResistance = DarkRes;
                 break;
-            case DamageType.HEALING:
-                actualDamage = damage;
-                break;
             default:
+                currResistance = 0;
                 break;
         }
+        
+        if(damageType != DamageType.HEALING)
+        {
+            actualDamage = (int)(BaseDefense - (damage * (1 - (currResistance / 100))));
+        }
 
-        actualDamage = (int)(BaseDefense - (damage * (1 - (currResistance / 100))));
-        //DebugDamage(damage, currResistance);
-        //Debug.Log(actualDamage);
-
-        if (actualDamage > 0 && damageType != DamageType.HEALING)
+        if(actualDamage > 0 && damageType != DamageType.HEALING)
         {
             actualDamage = 0;
         }
-
-        if(crit)
-        {
-            actualDamage *= 2;
-        }
+        //DebugDamage(damage, currResistance);
+        //Debug.Log(actualDamage);
 
         //Debug.Log(actualDamage);
 

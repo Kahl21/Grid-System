@@ -112,7 +112,7 @@ public static class HistoryHandler
 
         characterInfo += "Position In Grid: " + chara.CurrentPosition;
         
-        _characterInfo.Push(characterInfo);
+        //_characterInfo.Push(characterInfo);
     }
 
     //Sends back current view of battle history as string
@@ -188,15 +188,15 @@ public static class HistoryHandler
         }
         else
         {
-            if(!FightHandler.LastManStanding())
-            {
-                FightHandler.ContinueFight();
-            }
-            else
-            {
-                AddToCurrentAction("Team " + FightHandler.GetEnemies[0].Team + " WINS!!!");
-                FinalizeAction(FightHandler.GetEnemies[0]);
-            }
+            //if (!fighthandler.checkforend())
+            //{
+            //    //fighthandler.continuefight();
+            //}
+            //else
+            //{
+            //    AddToCurrentAction("Team " + FightHandler.GetAllCharacters[0].Team + " WINS!!!");
+            //    FinalizeAction(FightHandler.GetAllCharacters[0]);
+            //}
         }
     }
 

@@ -34,9 +34,9 @@ public class CameraFollow : MonoBehaviour
     //Initialize
     //focuses on middle of board
     //gets base distance needed
-    public void Init(BattleUI reference, GameObject firstOOI)
+    public void Init(GameObject firstOOI)
     {
-        _uiRef = reference;
+        _uiRef = UIHolder.UIInstance.GetBattleUI;
         _spaceDiff = firstOOI.transform.position - transform.position;
         _moving = false;
         _zoomed = false;

@@ -27,7 +27,7 @@ public class Magic : Ability
     }
 }
 
-// --------------FIRE SKILLS---------//
+// --------------FIRE MAGIC---------//
 public class Fireball : Magic
 { 
     public Fireball() : base()
@@ -44,7 +44,7 @@ public class Fireball : Magic
 
 }
 
-// --------------ICE SKILLS---------//
+// --------------ICE MAGIC---------//
 public class Icicle : Magic
 {
     public Icicle() : base()
@@ -60,7 +60,7 @@ public class Icicle : Magic
     }
 }
 
-// --------------THUNDER SKILLS---------//
+// --------------THUNDER MAGIC---------//
 public class Thunder : Magic
 {
     public Thunder() : base()
@@ -77,7 +77,7 @@ public class Thunder : Magic
 
 }
 
-// --------------DARK SKILLS---------//
+// --------------DARK MAGIC---------//
 public class Darkness : Magic
 {
     public Darkness() : base()
@@ -93,7 +93,7 @@ public class Darkness : Magic
     }
 }
 
-// --------------LIGHT SKILLS----------//
+// --------------LIGHT MAGIC----------//
 public class Shine : Magic
 {
     public Shine() : base()
@@ -109,7 +109,7 @@ public class Shine : Magic
     }
 }
 
-// --------------HEAL SKILLS----------//
+// --------------HEAL MAGIC----------//
 public class Heal : Magic
 {
     public Heal() : base()
@@ -144,7 +144,7 @@ public class Heal : Magic
     }
 }
 
-// --------------HYBRID SKILLS---------//
+// --------------HYBRID MAGIC---------//
 public class FlipFlop : Magic
 {
     public FlipFlop() : base()

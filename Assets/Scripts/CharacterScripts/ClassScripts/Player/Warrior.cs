@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Warrior : Character
+public class Warrior : PlayerClass
 {
     public Warrior() : base()
     {
         _myName = "Landorin";
+        _myClassName = "Warrior";
+        _mySprite = Resources.Load<Sprite>("UI/CharacterInfo/Sprites/" + _myClassName);
 
         _myHealth = 200;
         _myMaxHealth = _myHealth;
@@ -31,6 +33,8 @@ public class Warrior : Character
     public Warrior(string name, string tileMoniker, TeamType team, Vector2 startPos) : base(name, tileMoniker, team, startPos)
     {
         _myTeam = team;
+        _myClassName = "Warrior";
+        _mySprite = Resources.Load<Sprite>("UI/CharacterInfo/Sprites/" + _myClassName);
         _myName = name + tileMoniker;
         _myTileInfo = tileMoniker;
         _myHealth = Random.Range(50, 201);
@@ -79,7 +83,7 @@ public class Warrior : Character
         }
 
         _mySpeed = Random.Range(1, 101);
-        _myMovement = Random.Range(1, 3);
+        _myMovement = 2;
         _currMovement = _myMovement;
         _gridPos = startPos;
         _dead = false;

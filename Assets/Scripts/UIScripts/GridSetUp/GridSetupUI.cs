@@ -23,17 +23,17 @@ public class GridSetupUI : MonoBehaviour
 
     //initialize
     //loads empty that holds the entire field (all tiles and characters)
-    public void Init(UIHolder reference, BattleUI batUI)
+    public void Init()
     {
-        _uiRef = reference;
+        _uiRef = UIHolder.UIInstance;
 
         GameObject field = Resources.Load<GameObject>("GridObjects/BattleFieldHolder");
 
         GameObject newfield = Instantiate(field, Vector3.zero, Quaternion.identity, null);
 
         _battlefield = newfield.GetComponent<WorldGridHandler>();
-        _battlefield.Init(batUI);
-        GridHandler.Init(_battlefield);
+        _battlefield.Init();
+        GridHandler.Init();
 
 
         SetUI();

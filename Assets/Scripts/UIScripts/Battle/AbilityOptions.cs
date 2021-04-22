@@ -99,7 +99,7 @@ public class AbilityOptions : MonoBehaviour, IFadeable
 
     public void BringUpAbilities()
     {
-        GridHandler.StopSelection();
+        WorldGridHandler.WorldInstance.ResetPanels();
         //Debug.Log(_currAbilities.Count);
         _startTime = Time.time;
         GameUpdate.Subscribe += FadeInUI;

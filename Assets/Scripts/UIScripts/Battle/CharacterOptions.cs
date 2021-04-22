@@ -13,7 +13,7 @@ enum CharInfoState
 public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
 {
     CanvasGroup _mainPanel;
-    Button _moveButt, _attButt, _abilButt;
+    Button _moveButt, _attButt, _abilButt, _endButt;
     AbilityOptions _abilityPanel;
     public AbilityOptions GetAbilityPanel { get { return _abilityPanel; } }
 
@@ -32,11 +32,11 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
     Vector3 _movePos;
 
     Character _currCharacter;
-    BattleUI _uiRef;
+    BattleUI _batRef;
   
-    public void Init(BattleUI uiref)
+    public void Init()
     {
-        _uiRef = uiref;
+        _batRef = UIHolder.UIInstance.GetBattleUI;
         _myRect = GetComponent<RectTransform>();
         _startPos = _myRect.localPosition;
         _moveThreshold = _startPos.x - 300;
@@ -56,27 +56,20 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
         _moveButt = _mainPanel.transform.GetChild(0).GetComponent<Button>();
         _attButt = _mainPanel.transform.GetChild(1).GetComponent<Button>();
         _abilButt = _mainPanel.transform.GetChild(2).GetComponent<Button>();
+        _endButt = _mainPanel.transform.GetChild(3).GetComponent<Button>();
 
         _abilityPanel = transform.GetChild(1).GetComponent<AbilityOptions>();
-        _abilityPanel.Init(_uiRef, this);
+        _abilityPanel.Init(_batRef, this);
     }
 
     public void ShowUI(Character currentChar)
     {
-        if(currentChar != _currCharacter)
+        _abilityPanel.SetSkills(currentChar);
+        _currCharacter = currentChar;
+
+        if (_hidden)
         {
-            _abilityPanel.SetSkills(currentChar);
-            _currCharacter = currentChar;
-
-            if(_currCharacter.CurrentMovement == _currCharacter.Movement)
-            {
-                _currCharacter.StartTurn();
-            }
-
-            if (_hidden)
-            {
-                ShowUI();
-            }
+            ShowUI();
         }
     }
 
@@ -125,7 +118,7 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
     {
         if (_currCharacter != null)
         {
-            GridHandler.StopSelection();
+            WorldGridHandler.WorldInstance.ResetPanels();
             ShowUI();
         }
     }
@@ -136,6 +129,7 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
         {
             ChangeBattleInteraction(UIInteractions.MOVESELECT);
             HideUI();
+            //Debug.Log(_currCharacter.ClassName);
             _currCharacter.Move();
 
         }
@@ -241,7 +235,7 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
 
     public void ChangeBattleInteraction(UIInteractions state)
     {
-        _uiRef.GetInteractionState = state;
+        _batRef.GetInteractionState = state;
     }
 
     public void ResetPosition()
@@ -250,10 +244,15 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
         StartMove();
     }
 
+    public void EndButtonPressed()
+    {
+        _currCharacter = null;
+        _batRef.EndCurrentTurn();
+    }
+
     public void ResetUIMovements()
     {
         //Debug.Log("real ui hide called");
-        _currCharacter = null;
         _abilityPanel.ResetFading();
         HideUI();
     }

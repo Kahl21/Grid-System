@@ -44,13 +44,13 @@ public class DoubleSlash : Skill
     }
     public override void ActivateSkill(Character activator, List<Character> targets)
     {
-
         //HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + "\n");
         for (int i = 0; i < targets.Count; i++)
         {
             FightHandler.AttackEnemy(activator, targets[i]);
             FightHandler.AttackEnemy(activator, targets[i]);
         }
+        activator.CurrMana -= _mpCost;
     }
 }
 

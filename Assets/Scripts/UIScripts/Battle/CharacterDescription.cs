@@ -17,9 +17,9 @@ public class CharacterDescription: MonoBehaviour, IMoveable, IFadeable
     float _fadeCurrTime;
     bool _hidden;
 
-    public void Init(BattleUI ui)
+    public void Init()
     {
-        _uiRef = ui;
+        _uiRef = UIHolder.UIInstance.GetBattleUI;
         _mainPanel = GetComponent<CanvasGroup>();
         _myRect = GetComponent<RectTransform>();
         SetUI();
@@ -66,7 +66,8 @@ public class CharacterDescription: MonoBehaviour, IMoveable, IFadeable
                         + "Critical Chance: " + (info.Offense.CriticalChance + info.HeldWeapon.Crit) + "%" + " (" + info.HeldWeapon.Crit + ")" + "\n"
                         + "Speed: " + info.Speed + "\n"
                         + "Movement: " + info.Movement + "\n\n"
-                        + "Resistances: Fire/" + info.Defense.FireRes + "\n"
+                        + "Resistances: Physical/" + info.Defense.PhysRes + "\n" 
+                        + "             Fire/" + info.Defense.FireRes + "\n"
                         + "             Ice/" + info.Defense.IceRes + "\n"
                         + "             Thunder/" + info.Defense.ThunderRes + "\n"
                         + "             Light/" + info.Defense.LightRes + "\n"

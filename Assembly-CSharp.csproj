@@ -47,6 +47,7 @@
   <PropertyGroup>
     <ProjectTypeGuids>{E097FAD1-6243-4DAD-9C02-E9B9EFC3FFC1};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <UnityProjectGenerator>Unity/VSTU</UnityProjectGenerator>
+    <UnityProjectGeneratorVersion>4.8.2.0</UnityProjectGeneratorVersion>
     <UnityProjectType>Game:1</UnityProjectType>
     <UnityBuildTarget>StandaloneWindows64:19</UnityBuildTarget>
     <UnityVersion>2019.3.7f1</UnityVersion>
@@ -63,10 +64,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\AbilityScripts\Ability.cs" />
+    <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\AbilityScripts\Magic.cs" />
+    <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\AbilityScripts\Skill.cs" />
+    <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\AbilityScripts\SpellBook.cs" />
     <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\Character.cs" />
-    <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\CharacterStrategy.cs" />
-    <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\Mage.cs" />
-    <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\Warrior.cs" />
+    <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\Enemies\EnemyClass.cs" />
+    <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\Enemies\EnemyStrategy.cs" />
+    <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\Player\Mage.cs" />
+    <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\Player\PlayerClass.cs" />
+    <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\Player\Warrior.cs" />
+    <Compile Include="Assets\Scripts\CharacterScripts\ClassScripts\Strategy.cs" />
     <Compile Include="Assets\Scripts\CharacterScripts\WeaponScripts\Weapon.cs" />
     <Compile Include="Assets\Scripts\GameUpdate.cs" />
     <Compile Include="Assets\Scripts\Handlers\FightHandler.cs" />
@@ -79,10 +87,7 @@
     <Compile Include="Assets\Scripts\TerrainScripts\World\Tile.cs" />
     <Compile Include="Assets\Scripts\TerrainScripts\World\WorldGridHandler.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\AbilityOptions.cs" />
-    <Compile Include="Assets\Scripts\UIScripts\Battle\AbilityScripts\Ability.cs" />
-    <Compile Include="Assets\Scripts\UIScripts\Battle\AbilityScripts\Magic.cs" />
-    <Compile Include="Assets\Scripts\UIScripts\Battle\AbilityScripts\Skill.cs" />
-    <Compile Include="Assets\Scripts\UIScripts\Battle\AbilityScripts\SpellBook.cs" />
+    <Compile Include="Assets\Scripts\UIScripts\Battle\BattleTimeLine.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\BattleUI.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\CharacterDescription.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\CharacterOptions.cs" />

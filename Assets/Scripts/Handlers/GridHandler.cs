@@ -38,14 +38,18 @@ public static class GridHandler
     public static int GetGridLength { get { return _battleGrid.GetLength(0); } }
     static TerrainSpace[,] _terrainGrid;
     static int[,] _moveGrid;
+    static int[,] _distanceGrid;
 
     static WorldGridHandler _worldGrid;
 
+    //direction arrays for simplification of getting neighbor 
+    static int[] dx = { -1, 0, 1, 0 };
+    static int[] dy = { 0, 1, 0, -1 };
 
     //base Initialize
-    public static void Init(WorldGridHandler trackref)
+    public static void Init()
     {
-        _worldGrid = trackref;
+        _worldGrid = WorldGridHandler.WorldInstance;
     }
 
     //creates a new array of terrain based on the size and traits passed to it
@@ -69,6 +73,8 @@ public static class GridHandler
 
         _moveGrid = new int[_battleGrid.GetLength(0), _battleGrid.GetLength(1)];
         ResetMoveGrid();
+
+        _distanceGrid = new int[_battleGrid.GetLength(0), _battleGrid.GetLength(1)];
 
         GenerateTerrain(trait, maxheight);
 
@@ -230,6 +236,10 @@ public static class GridHandler
     public static Character RetrieveCharacter(int xpos, int ypos)
     {
         return _battleGrid[xpos, ypos];
+    }
+    public static Character RetrieveCharacter(Vector2 pos)
+    {
+        return _battleGrid[(int)pos.x, (int)pos.y];
     }
 
     public static GridToken RetrieveToken(Vector2 gridPos)
@@ -636,10 +646,12 @@ public static class GridHandler
     public static void MoveEnemy(Character movingCharacter, Vector2 desiredPos)
     {
         //HistoryHandler.AddToCurrentAction(movingCharacter.Name + " MOVES \n");
+        _battleGrid[(int)desiredPos.x, (int)desiredPos.y] = movingCharacter;
         ClearSpace(movingCharacter.CurrentPosition);
 
         movingCharacter.CurrentPosition = desiredPos;
-        _battleGrid[(int)desiredPos.x, (int)desiredPos.y] = movingCharacter;
+
+        
 
     }
     
@@ -678,6 +690,20 @@ public static class GridHandler
 
             rand1 = 0;
             rand2 = 0;
+        }
+    }
+
+    // Utility method to check whether a point is 
+    // inside the grid or not 
+    static bool IsInsideGrid(int pointx, int pointy)
+    {
+        if (pointx >= 0 && pointx < _battleGrid.GetLength(0) && pointy >= 0 && pointy < _battleGrid.GetLength(1))
+        {
+            return true;
+        }
+        else
+        {
+            return false;
         }
     }
 
@@ -790,6 +816,198 @@ public static class GridHandler
 
         Debug.Log("Data Grid: \n" + _gridDetail);
     }
+
+    public static List<Vector2> GetShortestMoves(Character moveableChar, Vector2 targetedSpace)
+    {
+        //Debug.Log(moveableChar.GetInfoIdentifier + " --> " + targetedSpace);
+        return UseDijkstra(moveableChar.CurrentPosition, targetedSpace);
+    }
+
+    // Method sets up distance grid
+    // then returns a set of vectors(tile placements) as move instructions
+    static List<Vector2> UseDijkstra(Vector2 startPos, Vector2 endPos)
+    {
+        Vector2 checkingEnd = endPos;
+
+        // initializing distance array by INT_MAX 
+        for (int i = 0; i < _battleGrid.GetLength(0); i++)
+        {
+            for (int j = 0; j < _battleGrid.GetLength(1); j++)
+            {
+                _distanceGrid[i, j] = 1000;
+            }
+        }
+
+
+        List<Vector2> CalculatingTiles = new List<Vector2>();
+        List<Vector2> NextMoves = new List<Vector2>();
+
+        // insert (0, 0) cell with 0 distance 
+        CalculatingTiles.Add(startPos);
+        NextMoves.Add(startPos);
+
+        // initialize distance of (0, 0) with its grid value 
+        _distanceGrid[(int)startPos.x, (int)startPos.y] = 0;
+
+        // loop for standard dijkstra's algorithm 
+        while (CalculatingTiles.Count > 0)
+        {
+            // get the cell with minimum distance and delete 
+            // it from the set
+
+            Vector2 checkingPoint = CalculatingTiles[0];
+            Vector2 whichtoaddtopath = checkingPoint;
+            CalculatingTiles.RemoveAt(0);
+
+
+            // looping through all neighbours 
+            for (int i = 0; i < 4; i++)
+            {
+                int x = (int)checkingPoint.x + dx[i];
+                int y = (int)checkingPoint.y + dy[i];
+                Vector2 check = new Vector2(x, y);
+
+                // if not inside boundary, ignore them 
+                if (!IsInsideGrid(x, y))
+                {
+                    continue;
+                }
+
+                // If distance from current cell is smaller, then 
+                // update distance of neighbour cell 
+                if (_distanceGrid[x, y] > _distanceGrid[(int)checkingPoint.x, (int)checkingPoint.y] + _terrainGrid[x, y].GetTerrainCost)
+                {
+                    // If cell is already there in set, then 
+                    // remove its previous entry 
+                    if (_distanceGrid[x, y] != 1000)
+                    {
+                        if (CalculatingTiles.Contains(check))
+                        {
+                            //Debug.Log("Removed vector: " + st[num]);
+                            CalculatingTiles.Remove(check);
+                        }
+                    }
+
+                    // update the distance and insert new updated 
+                    // cell in set 
+                    _distanceGrid[x, y] = _distanceGrid[(int)checkingPoint.x, (int)checkingPoint.y] + _terrainGrid[x, y].GetTerrainCost;
+
+                    //if()
+
+
+                    // Debug.Log("added vector: " + x + ", " + y);
+                    CalculatingTiles.Add(check);
+                    NextMoves.Add(whichtoaddtopath);
+                }
+            }
+
+            //Debug.Log(st[st.Count - 1].ToString() + "--> " + endPos);
+            if (CalculatingTiles.Contains(checkingEnd))
+            {
+                //Debug.Log("exit dijkstra");
+
+
+                break;
+            }
+        }
+
+        AddEnemiesToDistanceMap(startPos);
+
+        return GetShortestPath(startPos, checkingEnd);
+    }
+
+
+
+    //After Dijkstra
+    //"hollow out" spaces that have characters on them except for the player trying to move
+    static void AddEnemiesToDistanceMap(Vector2 characterPostion)
+    {
+        for (int j = 0; j < _distanceGrid.GetLength(1); j++)
+        {
+            for (int i = 0; i < _distanceGrid.GetLength(0); i++)
+            {
+                Vector2 newpos = new Vector2(i, j);
+                if (_battleGrid[i, j] != null && newpos != characterPostion)
+                {
+                    _distanceGrid[i, j] = 1000;
+                }
+            }
+        }
+    }
+
+    //After Distance map is ready(after dijkstra)
+    static List<Vector2> GetShortestPath(Vector2 start, Vector2 end)
+    {
+        //Start actual Path vector list that we will pass back
+        //Start checking vector list for parsing
+        List<Vector2> path = new List<Vector2>();
+        List<Vector2> check = new List<Vector2>();
+        path.Add(start);
+        check.Add(start);
+
+        while (check.Count > 0)
+        {
+            //set space we will check(nextspace) and remove space from check vector list
+            Vector2 currentspace = check[0];
+            Vector2 nextspace = check[0];
+            check.RemoveAt(0);
+
+            for (int i = 0; i < 4; i++)
+            {
+                int x = (int)currentspace.x + dx[i];
+                int y = (int)currentspace.y + dy[i];
+                Vector2 newSpace = new Vector2(x, y);
+
+                if (!IsInsideGrid(x, y))
+                {
+                    //Debug.Log("spot does not exist");
+                    continue;
+                }
+
+                //Debug.Log(end);
+
+                //check
+                if (_distanceGrid[x, y] < 1000 && !path.Contains(newSpace))
+                {
+                    if (_distanceGrid[x, y] > _distanceGrid[(int)nextspace.x, (int)nextspace.y])
+                    {
+                        nextspace = newSpace;
+                    }
+                    else if (_distanceGrid[x, y] == _distanceGrid[(int)nextspace.x, (int)nextspace.y])
+                    {
+                        if (Vector2.Distance(nextspace, end) > Vector2.Distance(newSpace, end))
+                        {
+                            nextspace = newSpace;
+                        }
+                    }
+                }
+            }
+
+            if (nextspace == end || nextspace == currentspace)
+            {
+                break;
+            }
+
+            check.Add(nextspace);
+            path.Add(nextspace);
+        }
+
+        if (!IsSpaceOccupied(end))
+        {
+            path.Add(end);
+        }
+        
+        
+        string pathDebug = "";
+        for (int i = 0; i < path.Count; i++)
+        {
+            pathDebug += path[i].x + ", " + path[i].y + "\n";
+        }
+        Debug.Log(pathDebug);
+        
+        return path;
+    }
+
     public static void DijkstraMove(Character moveableChar, Tile targetedSpace)
     {
         //DebugDataGrid();
@@ -798,12 +1016,33 @@ public static class GridHandler
 
         Vector2 moveSpot = new Vector2(targetedSpace.GetXPosition, targetedSpace.GetYPosition);
 
-        tilesToDestination.Add(moveableChar.CurrentPosition);
-        tilesToDestination.Add(moveSpot);
+        tilesToDestination = GetShortestMoves(moveableChar, moveSpot);
         
+        _worldGrid.StartCharacterMove(tilesToDestination);
+
         MoveEnemy(moveableChar, moveSpot);
+    }
+    
+    public static void DijkstraMove(Character moveableChar, Tile targetedSpace, int maxmovement)
+    {
+        //DebugDataGrid();
+
+        List<Vector2> tilesToDestination = new List<Vector2>();
+
+        Vector2 moveSpot = new Vector2(targetedSpace.GetXPosition, targetedSpace.GetYPosition);
+
+        tilesToDestination = GetShortestMoves(moveableChar, moveSpot);
+
+        //Debug.Log("tiles -> " + tilesToDestination.Count + ", movement = " + maxmovement);
+
+        for (int i = tilesToDestination.Count; i > maxmovement+1; i--)
+        {
+            tilesToDestination.RemoveAt(i - 1);
+        }
 
         _worldGrid.StartCharacterMove(tilesToDestination);
+
+        MoveEnemy(moveableChar, tilesToDestination[tilesToDestination.Count - 1]);
     }
 
     //resets and calculates all spaces that the character can move to
@@ -845,11 +1084,6 @@ public static class GridHandler
         //DebugMoveGrid();
 
         _worldGrid.LightUpBoard(availableSpaces, panelColor);
-    }
-
-    public static void StopSelection()
-    {
-        _worldGrid.ResetPanels();
     }
 
     public static int GetDistanceMoved(int xpos, int ypos)
@@ -956,9 +1190,5 @@ public static class GridHandler
         }
     }
 
-    // ---------------- MOVEMENT FUNCTIONS THAT MESS WITH THE MOVEGRID -----------------//
-    public static void CreateDamage(Vector2 attackPos, string amountOfdamage)
-    {
-        _worldGrid.SpawnDamageUI(attackPos, amountOfdamage);
-    }
+    
 }
