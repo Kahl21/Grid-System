@@ -34,10 +34,8 @@ public class PlayerClass : Character
     {
         if(!_dead)
         {
-            //_stratRef.WhatDo();
+            _stratRef.WhatDo();
             _currMovement = _myMovement;
-            _stratRef.HasAttacked = false;
-            _stratRef.HasMoved = false;
             //Debug.Log("Action Taken");
         }
     }
@@ -45,7 +43,7 @@ public class PlayerClass : Character
     //Moves unit randomly to any space it can travel
     public override void Move()
     {
-        //Debug.Log("move called");
+        Debug.Log("player move called");
         GridHandler.ShowReleventGrid(_gridPos, _currMovement, Color.blue, Actions.MOVE);
     }
 
@@ -66,12 +64,15 @@ public class PlayerClass : Character
 
     public override void StartAttack()
     {
+        Debug.Log("player attack active");
         GridHandler.ShowReleventGrid(_gridPos, _myWeapon.Range, Color.red, Actions.ATTACK);
     }
 
     public override void Attack(Character target)
     {
+        Debug.Log("player attcking");
         FightHandler.AttackEnemy(this, target);
+        _stratRef.HasAttacked = true;
     }
 
     //checks for enemies nearby and attacks
@@ -112,7 +113,9 @@ public class PlayerClass : Character
     //gets all enemies near and blindly choose one to hit
     //regardless of Spell Shape
     public override void UseSkill(Ability currSkill)
-    {
+    { 
+
+
         List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, currSkill, _myTeam); 
         int rand = UnityEngine.Random.Range(0, _enemiesNearMe.Count);
         if(_enemiesNearMe.Count > 0)
@@ -120,6 +123,7 @@ public class PlayerClass : Character
             _enemiesNearMe = GridHandler.GetTargetsInSplashZone(_enemiesNearMe[rand].CurrentPosition,  currSkill);
 
             currSkill.ActivateSkill(this, _enemiesNearMe);
+            _stratRef.HasAttacked = true;
         }
 
     }
@@ -129,31 +133,30 @@ public class PlayerClass : Character
     //checks the splash zone for collatoral
     public override void UseSkill(Ability currSkill, Character currTarget)
     {
-        List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, currSkill, _myTeam, currTarget);
 
-        //Debug.Log("using " + currSkill.Name);
-        if(_enemiesNearMe.Count > 0)
-        {
-            _enemiesNearMe = GridHandler.GetTargetsInSplashZone(_enemiesNearMe[0].CurrentPosition, currSkill);
+        Debug.Log("using " + currSkill.Name);
+        List<Character> enemiesNearMe = new List<Character>();
+        enemiesNearMe.Add(currTarget);
+        currSkill.ActivateSkill(this, enemiesNearMe);
+        _stratRef.HasAttacked = true;
 
-            currSkill.ActivateSkill(this, _enemiesNearMe);
-        }
     }
 
-    //Use heal Skill passed to it
-    //gets al enemies near and blindly choose one to hit
+    //Use heal Skill passed to it on myself
     public override void UseHeal(Ability currSkill)
     {
-        List<Character> _enemiesNearMe = new List<Character>();
-        _enemiesNearMe.Add(this);
-        currSkill.ActivateSkill(this, _enemiesNearMe);
+        List<Character> enemiesNearMe = new List<Character>();
+        enemiesNearMe.Add(this);
+        currSkill.ActivateSkill(this, enemiesNearMe);
+        _stratRef.HasAttacked = true;
     }
 
-    //Use Heal Skill passed to it
-    //gets all Allies nearby and chooses one with the least health
+    //Use Heal Skill passed to it and heals target
     public override void UseHeal(Ability currSkill, Character currTarget)
     {
-        //List<Character> _enemiesNearMe = GridHandler.GetAlliesinRange(_gridPos, currSkill);
-        //currSkill.ActivateSkill(this, _enemiesNearMe, currTarget);
+        List<Character> enemiesNearMe = new List<Character>();
+        enemiesNearMe.Add(currTarget);
+        currSkill.ActivateSkill(this, enemiesNearMe);
+        _stratRef.HasAttacked = true;
     }
 }

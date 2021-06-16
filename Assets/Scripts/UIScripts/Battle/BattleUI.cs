@@ -18,6 +18,8 @@ public class BattleUI : MonoBehaviour
 {
     UIHolder _uiRef;
 
+    GameObject _selector;
+
     Ability _selectedAbility;
     Vector2 _abilityTarget;
 
@@ -25,6 +27,7 @@ public class BattleUI : MonoBehaviour
     Text _heightText;
     GameObject _timeline;
     BattleTimeLine _timeRef;
+    public BattleTimeLine GetTimeline { get { return _timeRef; } }
 
     //short description
     GameObject _shortHolder;
@@ -35,6 +38,9 @@ public class BattleUI : MonoBehaviour
     //detailed description
     CharacterDescription _detailHolder;
 
+    //ending message
+    BattleEnding _endingHolder;
+
     //battle menu
     CharacterOptions _optionsRef;
     CameraFollow _battleCam;
@@ -43,17 +49,27 @@ public class BattleUI : MonoBehaviour
     UIInteractions _interactState = UIInteractions.NONE;
     public UIInteractions GetInteractionState { get { return _interactState; } set { _interactState = value; } }
 
-    GameObject _selector;
+    bool _initialized;
+
+
     //initalize
     public void Init(CameraFollow camref)
     {
-        _uiRef = UIHolder.UIInstance;
-        _battleCam = camref;
-        _interactState = UIInteractions.FREE;
-        _selector = Instantiate<GameObject>(Resources.Load<GameObject>("GridObjects/Selector"));
-        _selector.SetActive(false);
+        if (!_initialized)
+        {
+            _uiRef = UIHolder.UIInstance;
+            _battleCam = camref;
+            _selector = Instantiate<GameObject>(Resources.Load<GameObject>("GridObjects/Selector"));
+            _selector.SetActive(false);
+            SetUI();
+        }
+        else
+        {
+            _timeRef.ContinueFight();
+        }
 
-        SetUI();
+        _battleCam.ChangeToBattleMode();
+        _interactState = UIInteractions.FREE;
     }
 
     //grabs all relevent UI components on children
@@ -78,24 +94,31 @@ public class BattleUI : MonoBehaviour
         _detailHolder = transform.GetChild(4).GetComponent<CharacterDescription>();
         _detailHolder.Init();
 
-        CheckNextTurn();
+        _endingHolder = transform.GetChild(5).GetComponent<BattleEnding>();
+        _endingHolder.Init();
+
+        _initialized = true;
+
+        _timeRef.ContinueFight();
     }
 
-    public void CheckNextTurn()
+    public void CheckNextTurn(Character currentchara)
     {
-        _battleCam.FocusObject(GridHandler.RetrieveToken(_timeRef.GetCurrentTurnCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
-        _timeRef.ContinueFight();
+        _battleCam.FocusPosition(GridHandler.RetrieveToken(currentchara.CurrentPosition).gameObject, CameraModes.MOVING);
 
         if (_timeRef.GetCurrentTurnCharacter.Team == TeamType.PLAYER)
         {
             Debug.Log("Player turn");
-            GameUpdate.Subscribe += PlayerInteract;
+            GameUpdate.PlayerSubscribe += PlayerInteract;
             _interactState = UIInteractions.MENUOPEN;
-            _optionsRef.ShowUI(_timeRef.GetCurrentTurnCharacter);
+            currentchara.StartTurn();
+            _optionsRef.ShowUI(currentchara);
         }
         else
         {
             Debug.Log("enemy turn");
+
+            currentchara.StartTurn();
         }
     }
 
@@ -399,7 +422,7 @@ public class BattleUI : MonoBehaviour
                     _abilityTarget = new Vector2(tile.GetXPosition, tile.GetYPosition);
                     GridHandler.ShowReleventGrid(_abilityTarget, _selectedAbility.SplashRange, Color.red, Actions.ABILITY);
                     _interactState = UIInteractions.ABILITYUSE;
-                    _battleCam.FocusObject(tile.gameObject, CameraModes.ZOOMING);
+                    _battleCam.FocusPosition(tile.gameObject, CameraModes.ZOOMING);
                 }
 
             }
@@ -411,7 +434,7 @@ public class BattleUI : MonoBehaviour
                     _abilityTarget = new Vector2(gt.GetTile.GetXPosition, gt.GetTile.GetYPosition);
                     GridHandler.ShowReleventGrid(_abilityTarget, _selectedAbility.SplashRange, Color.red, Actions.ABILITY);
                     _interactState = UIInteractions.ABILITYUSE;
-                    _battleCam.FocusObject(gt.gameObject, CameraModes.ZOOMING);
+                    _battleCam.FocusPosition(gt.gameObject, CameraModes.ZOOMING);
                 }
             }
         }
@@ -421,10 +444,10 @@ public class BattleUI : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0) && GridHandler.CheckForEnemyWithinSpashZone(_abilityTarget, _selectedAbility.SplashRange))
         {
-            _optionsRef.HideUI();
             _timeRef.GetCurrentTurnCharacter.Strategy.HasAttacked = true;
-            _selectedAbility.ActivateSkill(_timeRef.GetCurrentTurnCharacter, GridHandler.GetTargetsInSplashZone(_abilityTarget, _selectedAbility));
-            _battleCam.FocusObject(GridHandler.RetrieveTile(_abilityTarget).gameObject, CameraModes.MOVING); 
+            _optionsRef.HideUI();
+            _timeRef.GetCurrentTurnCharacter.UseSkill(_selectedAbility, GridHandler.RetrieveCharacter(_abilityTarget));
+            _battleCam.FocusPosition(GridHandler.RetrieveTile(_abilityTarget).gameObject, CameraModes.MOVING); 
         }
     }
 
@@ -447,28 +470,22 @@ public class BattleUI : MonoBehaviour
             _timeRef.GetCurrentTurnCharacter.Strategy.ContinueTurn();
         }
 
-        _battleCam.FocusObject(currChar.gameObject, CameraModes.MOVING);
+        _battleCam.FocusPosition(currChar.gameObject, CameraModes.MOVING);
     }
 
     public void CharacterDoneAttacking()
     {
         if (_timeRef.GetCurrentTurnCharacter.Team == TeamType.PLAYER)
         {
+            _timeRef.GetCurrentTurnCharacter.Strategy.HasAttacked = true;
             _optionsRef.ShowUI();
             _interactState = UIInteractions.MENUOPEN;
-            _timeRef.GetCurrentTurnCharacter.Strategy.HasAttacked = true;
-            _battleCam.FocusObject(GridHandler.RetrieveToken(_timeRef.GetCurrentTurnCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
+            _battleCam.FocusPosition(GridHandler.RetrieveToken(_timeRef.GetCurrentTurnCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
         }
         else
         {
-            if(_timeRef.GetCurrentTurnCharacter.Strategy.HasAttacked && _timeRef.GetCurrentTurnCharacter.Strategy.HasAttacked)
-            {
-                EndCurrentTurn();
-            }
-            else
-            {
-                _timeRef.GetCurrentTurnCharacter.Strategy.ContinueTurn();
-            }
+            _timeRef.GetCurrentTurnCharacter.Strategy.ContinueTurn();
+         
         }
     }
 
@@ -505,24 +522,24 @@ public class BattleUI : MonoBehaviour
                         }
                         break;
                     case UIInteractions.MOVESELECT:
-                        _battleCam.FocusObject(GridHandler.RetrieveToken(_timeRef.GetCurrentTurnCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
+                        _battleCam.FocusPosition(GridHandler.RetrieveToken(_timeRef.GetCurrentTurnCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
                         _interactState = UIInteractions.MENUOPEN;
                         _optionsRef.BackToMenu();
                         _optionsRef.GetAbilityPanel.ResetFading();
                         break;
                     case UIInteractions.ATTACKSELECT:
-                        _battleCam.FocusObject(GridHandler.RetrieveToken(_timeRef.GetCurrentTurnCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
+                        _battleCam.FocusPosition(GridHandler.RetrieveToken(_timeRef.GetCurrentTurnCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
                         _interactState = UIInteractions.MENUOPEN;
                         _optionsRef.BackToMenu();
                         _optionsRef.GetAbilityPanel.ResetFading();
                         break;
                     case UIInteractions.ABILITYSELECT:
-                        _battleCam.FocusObject(GridHandler.RetrieveToken(_timeRef.GetCurrentTurnCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
+                        _battleCam.FocusPosition(GridHandler.RetrieveToken(_timeRef.GetCurrentTurnCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
                         _interactState = UIInteractions.MENUOPEN;
                         _optionsRef.ShowOnlyAbilites();
                         break;
                     case UIInteractions.ABILITYUSE:
-                        _battleCam.FocusObject(GridHandler.RetrieveTile(_abilityTarget).gameObject, CameraModes.MOVING);
+                        _battleCam.FocusPosition(GridHandler.RetrieveTile(_abilityTarget).gameObject, CameraModes.MOVING);
                         AbilitySelected(_selectedAbility);
                         break;
                     default:
@@ -587,7 +604,7 @@ public class BattleUI : MonoBehaviour
         Character clickedOnCharacter = GridHandler.RetrieveCharacter(clickedOnToken.GetXPosition, clickedOnToken.GetYPosition);
 
         _detailHolder.ShowUI(clickedOnCharacter);
-        _battleCam.FocusObject(clickedOnToken.gameObject, CameraModes.ZOOMING);
+        _battleCam.FocusPosition(clickedOnToken.gameObject, CameraModes.ZOOMING);
     }
 
     //Turns off long character details
@@ -601,7 +618,7 @@ public class BattleUI : MonoBehaviour
     //turn on character interaction UI
     void ShowActionsMenu(Tile chara)
     {
-        _battleCam.FocusObject(chara.gameObject, CameraModes.MOVING);
+        _battleCam.FocusPosition(chara.gameObject, CameraModes.MOVING);
         
         Character gridChar = GridHandler.RetrieveCharacter(chara.GetXPosition, chara.GetYPosition);
         if(gridChar == _timeRef.GetCurrentTurnCharacter && !_optionsRef.IsMoving)
@@ -626,9 +643,17 @@ public class BattleUI : MonoBehaviour
 
     public void EndCurrentTurn()
     {
-        GameUpdate.Subscribe -= PlayerInteract;
+        GameUpdate.ClearPlayerSubscriptions();
         HideActionsMenu();
         _timeRef.EndOfTurn();
-        CheckNextTurn();
+    }
+
+    public void EndBattle()
+    {
+        Debug.Log("ending called");
+        HideActionsMenu();
+        _optionsRef.GetAbilityPanel.ResetAbilityButtons();
+        _timeRef.ResetTimeline();
+        _endingHolder.StartEnding();
     }
 }

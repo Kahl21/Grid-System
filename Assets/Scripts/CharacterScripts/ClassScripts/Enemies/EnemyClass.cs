@@ -85,28 +85,8 @@ public class EnemyClass : Character
 
     public override void Attack(Character target)
     {
-        if (GridHandler.CheckForEnemyWithinRange(_gridPos, _myWeapon, _myTeam))
-        {
-            List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, _myWeapon, _myTeam);
-            if (_enemiesNearMe.Count > 0)
-            {
-                //Debug.Log("attacking random");
-                int randNum = UnityEngine.Random.Range(0, _enemiesNearMe.Count);
-
-                FightHandler.AttackEnemy(this, _enemiesNearMe[randNum]);
-                return;
-            }
-            else
-            {
-                //Debug.Log("no enemy");
-                _stratRef.StartWaiting();
-            }
-        }
-        else
-        {
-            _stratRef.StartWaiting();
-        }
-
+        FightHandler.AttackEnemy(this, target);
+        return;
     }
 
     //checks for enemies nearby and attacks
@@ -164,15 +144,11 @@ public class EnemyClass : Character
     //checks the splash zone for collatoral
     public override void UseSkill(Ability currSkill, Character currTarget)
     {
-        List<Character> _enemiesNearMe = GridHandler.GetEnemiesinRange(_gridPos, currSkill, _myTeam, currTarget);
+        List<Character> _enemiesNearMe = new List<Character>();
+        _enemiesNearMe.Add(currTarget);
 
-        //Debug.Log("using " + currSkill.Name);
-        if(_enemiesNearMe.Count > 0)
-        {
-            _enemiesNearMe = GridHandler.GetTargetsInSplashZone(_enemiesNearMe[0].CurrentPosition, currSkill);
-
-            currSkill.ActivateSkill(this, _enemiesNearMe);
-        }
+        currSkill.ActivateSkill(this, _enemiesNearMe);
+        
     }
 
     //Use heal Skill passed to it

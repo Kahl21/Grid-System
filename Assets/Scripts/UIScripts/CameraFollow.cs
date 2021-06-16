@@ -14,18 +14,26 @@ public enum CameraModes
 
 public class CameraFollow : MonoBehaviour
 {
+    [SerializeField]
     CameraModes _myCurrMode = CameraModes.NONE;
     public CameraModes GetCameraMode { get { return _myCurrMode; } set { _myCurrMode = value; } }
-    GameObject _objOfInterest;
+
+    Camera _camComponent;
+    RenderTexture _textureforgridcam;
+
+    Vector3 _objOfInterest;
 
     Vector3 _spaceDiff, _startPos, _targetPos;
 
+    [SerializeField]
     float _moveSpeed = .3f, _freeCamMoveSpeed = 7.5f;
+    [SerializeField]
     float _zoomSpeed = .3f, _zoomDistance = 6f;
+    [SerializeField]
     float _showcaseSpeed = 25f, _rotateSpeed = 50f;
     float _startTime, _currTime;
 
-    bool _zoomed, _moving;
+    bool _zoomed, _moving, _initialized;
     public bool AmZoomed { get { return _zoomed; } }
     public bool IsMoving { get { return _moving; } }
 
@@ -36,18 +44,39 @@ public class CameraFollow : MonoBehaviour
     //gets base distance needed
     public void Init(GameObject firstOOI)
     {
-        _uiRef = UIHolder.UIInstance.GetBattleUI;
-        _spaceDiff = firstOOI.transform.position - transform.position;
-        _moving = false;
-        _zoomed = false;
+        if (!_initialized)
+        {
+            _camComponent = GetComponent<Camera>();
+            _uiRef = UIHolder.UIInstance.GetBattleUI;
+            _spaceDiff = firstOOI.transform.position - transform.position;
+            _moving = false;
+            _zoomed = false;
+            _initialized = true;
+        }
+        else
+        {
+            _camComponent.targetTexture = _textureforgridcam;
+        }
+    }
+
+    public void ChangeToBattleMode()
+    {
+        _textureforgridcam = _camComponent.targetTexture;
+        _camComponent.targetTexture = null;
+        _camComponent.enabled = true;
     }
 
     //called when the camera needs to move
-    public void FocusObject(GameObject POI, CameraModes howToLook)
+    public void FocusPosition(GameObject POI, CameraModes howToLook)
+    {
+        FocusPosition(POI.transform.position, howToLook);
+    }
+
+    public void FocusPosition(Vector3 POI, CameraModes howToLook)
     {
         if (!_moving)
         {
-            GameUpdate.Subscribe -= PlayerControl;
+            GameUpdate.PlayerSubscribe -= PlayerControl;
             _objOfInterest = POI;
             _startPos = transform.position;
             //Debug.Log(POI.name);
@@ -56,20 +85,22 @@ public class CameraFollow : MonoBehaviour
                 //if the player left clicks on a character
                 //move to that character as the focus
                 case CameraModes.MOVING:
-                    _targetPos = _objOfInterest.transform.position - _spaceDiff;
+                    _targetPos = _objOfInterest - _spaceDiff;
                     _zoomed = false;
-                    GameUpdate.Subscribe += MoveToPosition;
+                    GameUpdate.UISubscribe += MoveToPosition;
                     break;
                 //if the player right clicks on a character
                 //move to that character as the focus
                 //zoom on characters
                 case CameraModes.ZOOMING:
-                    _targetPos = (_objOfInterest.transform.position - _spaceDiff) + (transform.forward * _zoomDistance);
+                    _targetPos = (_objOfInterest - _spaceDiff) + (transform.forward * _zoomDistance);
                     _zoomed = true;
-                    GameUpdate.Subscribe += ZoomOn;
+                    GameUpdate.UISubscribe += ZoomOn;
                     break;
+                //called when the player tries to rotate the camera around the battlefield
+                //used in the GridSetup to rotate the grid preview
                 case CameraModes.SHOWCASING:
-                    GameUpdate.Subscribe += Showcase;
+                    GameUpdate.UISubscribe += Showcase;
                     break;
                 default:
                     break;
@@ -80,11 +111,10 @@ public class CameraFollow : MonoBehaviour
             _startTime = Time.time;
         }
     }
-
     public void CameraFullStop()
     {
         _myCurrMode = CameraModes.NONE;
-        GameUpdate.Subscribe -= PlayerControl;
+        GameUpdate.UISubscribe -= PlayerControl;
     }
 
     //called for player manual movement
@@ -121,6 +151,8 @@ public class CameraFollow : MonoBehaviour
         }
     }
 
+    //called when the UIState changes
+    //checks if menus need to be hidden or not
     void CheckBattleState()
     {
         if(_uiRef.GetInteractionState == UIInteractions.FREE)
@@ -148,7 +180,7 @@ public class CameraFollow : MonoBehaviour
         }
     }
 
-    //moves 
+    //math to move camera left right forward backward
     void MoveCamera(Vector3 direction)
     {
         direction.y = 0f;
@@ -164,8 +196,8 @@ public class CameraFollow : MonoBehaviour
         {
             _currTime = 1;
             _myCurrMode = CameraModes.FREE;
-            GameUpdate.Subscribe -= MoveToPosition;
-            GameUpdate.Subscribe += PlayerControl;
+            GameUpdate.UISubscribe -= MoveToPosition;
+            GameUpdate.PlayerSubscribe += PlayerControl;
             _moving = false;
             //Debug.Log("Done Moving");
         }
@@ -188,7 +220,7 @@ public class CameraFollow : MonoBehaviour
             transform.position = _targetPos;
             _currTime = 1;
             _myCurrMode = CameraModes.NONE;
-            GameUpdate.Subscribe -= ZoomOn;
+            GameUpdate.UISubscribe -= ZoomOn;
             _moving = false;
         }
     }
@@ -243,27 +275,29 @@ public class CameraFollow : MonoBehaviour
         }
     }
 
+    //called when camera needs to be sent to base functionality
+    //called when turns end
     public void HardResetCamera()
     {
         _moving = false;
         RemoveSubscriptions();
         if (_zoomed)
         {
-            FocusObject(_objOfInterest, CameraModes.MOVING);
+            FocusPosition(_objOfInterest, CameraModes.MOVING);
         }
         else
         {
             _myCurrMode = CameraModes.FREE;
-            GameUpdate.Subscribe += PlayerControl;
+            GameUpdate.PlayerSubscribe += PlayerControl;
         }
     }
 
     //Removes all would-be camera movements from update
     void RemoveSubscriptions()
     {
-        GameUpdate.Subscribe -= PlayerControl;
-        GameUpdate.Subscribe -= MoveToPosition;
-        GameUpdate.Subscribe -= ZoomOn;
-        GameUpdate.Subscribe -= Showcase;
+        GameUpdate.PlayerSubscribe -= PlayerControl;
+        GameUpdate.UISubscribe -= MoveToPosition;
+        GameUpdate.UISubscribe -= ZoomOn;
+        GameUpdate.UISubscribe -= Showcase;
     }
 }

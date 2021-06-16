@@ -12,31 +12,46 @@ public class GridSetupUI : MonoBehaviour
     Slider _ElevationSlide;
 
     //Changeables
+    [SerializeField]
     int _numberOfEnemies = 1;
+    [SerializeField]
     GridSize _gsChoice;
+    [SerializeField]
     GridTraits _gtChoice;
+    [SerializeField]
     float _elevation;
 
     WorldGridHandler _battlefield;
 
     UIHolder _uiRef;
+    bool _initialized = false;
 
     //initialize
     //loads empty that holds the entire field (all tiles and characters)
     public void Init()
     {
-        _uiRef = UIHolder.UIInstance;
+        if (!_initialized)
+        {
+            _uiRef = UIHolder.UIInstance;
 
-        GameObject field = Resources.Load<GameObject>("GridObjects/BattleFieldHolder");
+            GameObject field = Resources.Load<GameObject>("GridObjects/BattleFieldHolder");
 
-        GameObject newfield = Instantiate(field, Vector3.zero, Quaternion.identity, null);
+            GameObject newfield = Instantiate(field, Vector3.zero, Quaternion.identity, null);
 
-        _battlefield = newfield.GetComponent<WorldGridHandler>();
-        _battlefield.Init();
-        GridHandler.Init();
+            _battlefield = newfield.GetComponent<WorldGridHandler>();
+            _battlefield.Init();
+            GridHandler.Init();
 
+            _initialized = true;
+            SetUI();
+        }
+        else
+        {
+            _battlefield.Init();
+            GridHandler.Init();
+        }
 
-        SetUI();
+        ChangeGrid();
     }
 
     //sets all relevent UI
@@ -55,8 +70,6 @@ public class GridSetupUI : MonoBehaviour
         _gsChoice = GridSize.Small;
         _gtChoice = GridTraits.NONE;
         _elevation = _ElevationSlide.value;
-
-        ChangeGrid();
     }
 
     //sends player into battle

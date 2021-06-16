@@ -32,8 +32,6 @@ public class UIHolder : MonoBehaviour
     public BattleUI GetBattleUI { get { return _battleUI; } }
     CameraFollow _gridCamera;
 
-    RenderTexture _textureforgridcam;
-
     //Init is the first thing that happens
     private void Awake()
     {
@@ -48,18 +46,7 @@ public class UIHolder : MonoBehaviour
 
         SpellBook.LoadSpellBook();
         LoadUIRefs();
-        _csUI.gameObject.SetActive(true);
-        _gridUI.gameObject.SetActive(false);
-        _battleUI.gameObject.SetActive(false);
-       
-    }
-
-    //for resetting game 
-    public void Reawake()
-    {
-        _csUI.gameObject.SetActive(true);
-        _gridUI.gameObject.SetActive(false);
-        _battleUI.gameObject.SetActive(false);
+        ShowCharacterSelect();
     }
 
     private void Update()
@@ -67,11 +54,17 @@ public class UIHolder : MonoBehaviour
         GameUpdate.CheckUpdate();
     }
 
+    public void ShowCharacterSelect()
+    {
+        _csUI.gameObject.SetActive(true);
+        _gridUI.gameObject.SetActive(false);
+        _battleUI.gameObject.SetActive(false);
+        _csUI.Init();
+    }
     //grabs all relevent UI scripts from children
     void LoadUIRefs()
     {
         _csUI = transform.GetChild(0).GetComponent<CharacterSelectUI>();
-        _csUI.Init(this);
         _gridUI = transform.GetChild(1).GetComponent<GridSetupUI>();
         _battleUI = transform.GetChild(2).GetComponent<BattleUI>();
     }
@@ -85,24 +78,20 @@ public class UIHolder : MonoBehaviour
 
         _csUI.gameObject.SetActive(false);
 
-        _gridUI.Init();
         _gridUI.gameObject.SetActive(true);
+        _gridUI.Init();
     }
 
     //called when grid setup is complete, start battle on grid
     public void StartFight(int enemies, CameraFollow battleCam)
     {
         _gridCamera = battleCam;
-        _textureforgridcam = _gridCamera.GetComponent<Camera>().targetTexture;
-        _gridCamera.GetComponent<Camera>().targetTexture = null;
-        _gridCamera.GetComponent<Camera>().enabled = true;
-        Camera.main.enabled = false;
+        //Camera.main.enabled = false;
         _gridUI.gameObject.SetActive(false);
 
         //_gridCamera.Init();
         _gridCamera.HardResetCamera();
         
-        //HistoryHandler.Init(this);
         FightHandler.Init(enemies, _playerCharacters);
         _battleUI.gameObject.SetActive(true);
         _battleUI.Init(_gridCamera);
@@ -110,8 +99,19 @@ public class UIHolder : MonoBehaviour
         //Debug.Log("starting Player Control");
     }
 
-    public void FightEnd()
+    public void ResetToTeamSelect()
     {
+        GameUpdate.ClearPlayerSubscriptions();
+        GameUpdate.ClearWorldSubscriptions();
+        ShowCharacterSelect();
+        _gridCamera.FocusPosition(Vector3.zero, CameraModes.MOVING);
+        //Camera.main.enabled = true;
+    }
 
+    public void DebugUpdate()
+    {
+        Debug.Log("PlayerUpdate: " + GameUpdate.PlayerSubscribe);
+        Debug.Log("UIUpdate: " + GameUpdate.UISubscribe);
+        Debug.Log("WorldUpdate: " + GameUpdate.ObjectSubscribe);
     }
 }

@@ -152,9 +152,8 @@ public static class FightHandler
 
     static public void CheckForEnd(Character removable)
     {
-        Debug.Log("ending called");
-        GridHandler.ClearSpace(removable.CurrentPosition);
-        _spawnedCharacters.Remove(removable);
+        //Debug.Log("check for ending called");
+        Debug.Log(_spawnedCharacters.Count);
 
         if(_spawnedCharacters.Count > 1)
         {
@@ -166,11 +165,17 @@ public static class FightHandler
                     return;
                 }
             }
+
+            UIHolder.UIInstance.GetBattleUI.EndBattle();
+        }
+        else if(_spawnedCharacters.Count == 1)
+        {
+            //Debug.Log("1 left");
+            UIHolder.UIInstance.GetBattleUI.EndBattle();
         }
         else
         {
-            //Debug.Log("1 left");
-            
+            Debug.Log("nothing in character list for some reason");
         }
     }
 
@@ -209,32 +214,32 @@ public static class FightHandler
 
         if(attacker.Offense.Accuracy > randNum || randNum == 0)
         {
-            int damage = attacker.Offense.Strength + attacker.HeldWeapon.StrengthMod;
-            string tempDamage = damage.ToString();
+            int damage = attacker.Offense.Strength + attacker.HeldWeapon.StrengthMod; 
+            int calcDamage = target.Defense.CalculateDamage(damage, attacker.HeldWeapon.WeaponElement);
+            damageString += calcDamage;
             randNum = Random.Range(0, 100);
             if (attacker.Offense.CriticalChance > randNum || randNum == 0)
             {
-                damage *= 2;
-                tempDamage = damage.ToString() + "!";
+                calcDamage = target.Defense.CalculateDamage(damage*2, attacker.HeldWeapon.WeaponElement);
+                damageString = calcDamage.ToString() + "!";
                 //HistoryHandler.AddToCurrentAction("and CRITS for " + Mathf.Abs(target.Defense.CalculateDamage(damage, attacker.HeldWeapon.WeaponElement, true)).ToString() + "\n");
             }
 
-            int finalDamage = target.Defense.CalculateDamage(damage, attacker.HeldWeapon.WeaponElement);
-            
-
-            target.TakeDamage(finalDamage);
+            target.TakeDamage(calcDamage);
             target.LastAttacker = attacker;
         }
         else
         {
             damageString = "MISS";
         }
+        Debug.Log(target.Name + " takes " + damageString + " damage");
         WorldGridHandler.WorldInstance.SpawnDamageUI(target.CurrentPosition, damageString);
         CheckDeath(target);
     }
 
     static public void AbilityEnemy(int damage, DamageType element, Character target)
     {
+        
         string damageString = "";
 
         int FinalDamage = target.Defense.CalculateDamage(damage, element);
@@ -242,23 +247,24 @@ public static class FightHandler
         target.TakeDamage(FinalDamage);
 
         damageString += FinalDamage;
-
+        Debug.Log(target.Name + " takes " + damageString + " damage");
         WorldGridHandler.WorldInstance.SpawnDamageUI(target.CurrentPosition, damageString);
         CheckDeath(target);
     }
 
     static private void CheckDeath(Character check)
     {
-        Debug.Log("Death called");
+        Debug.Log("Death checked");
         if(check.CurrHealth <= 0)
         {
+            WorldGridHandler.WorldInstance.RemoveGridPiece(check.CurrentPosition);
+            GridHandler.ClearSpace(check.CurrentPosition);
+            UIHolder.UIInstance.GetBattleUI.GetTimeline.RemovecharacterFromTimeline(check);
+            _spawnedCharacters.Remove(check);
+
             Debug.Log("character dead");
             CheckForEnd(check);
         }
     }
 
-    static public void ForceEndTurn()
-    {
-        WorldGridHandler.WorldInstance.CharacterForceEnd();
-    }
 }

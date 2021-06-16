@@ -17,6 +17,7 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
     AbilityOptions _abilityPanel;
     public AbilityOptions GetAbilityPanel { get { return _abilityPanel; } }
 
+    [SerializeField]
     float _moveFadeSpeed = .3f;
     float _startTime;
     float _fadeCurrTime, _moveCurrTime;
@@ -77,7 +78,7 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
     {
         CheckForDisabledButtons();
         CalculateMove();
-        GameUpdate.Subscribe += FadeInUI;
+        GameUpdate.UISubscribe += FadeInUI;
     }
 
     void CheckForDisabledButtons()
@@ -110,7 +111,7 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
         if (!_hidden || !_abilityPanel.IsHidden)
         {
             _hidden = true;
-            GameUpdate.Subscribe += FadeOutUI;
+            GameUpdate.UISubscribe += FadeOutUI;
         }
     }
 
@@ -152,7 +153,7 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
         {
             _abilityPanel.BringUpAbilities();
             CalculateMove();
-            GameUpdate.Subscribe += FadeOutUI;
+            GameUpdate.UISubscribe += FadeOutUI;
         }
     }
 
@@ -187,7 +188,7 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
         {
             _moving = true;
             _startTime = Time.time;
-            GameUpdate.Subscribe += MoveUI;
+            GameUpdate.UISubscribe += MoveUI;
         }
     }
 
@@ -199,7 +200,7 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
             _mainPanel.alpha = 1;
             _mainPanel.blocksRaycasts = true;
             _hidden = false;
-            GameUpdate.Subscribe -= FadeInUI;
+            GameUpdate.UISubscribe -= FadeInUI;
         }
 
         _mainPanel.alpha = RandomThings.Interpolate(_fadeCurrTime, _mainPanel.alpha, 1);
@@ -213,7 +214,7 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
             _mainPanel.alpha = 0;
             _mainPanel.blocksRaycasts = false;
             _hidden = true;
-            GameUpdate.Subscribe -= FadeOutUI;
+            GameUpdate.UISubscribe -= FadeOutUI;
         }
 
         _mainPanel.alpha = RandomThings.Interpolate(_fadeCurrTime, _mainPanel.alpha, 0);
@@ -227,7 +228,7 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
             _myRect.localPosition = _movePos;
             _currPos = _myRect.localPosition;
             _moving = false;
-            GameUpdate.Subscribe -= MoveUI;
+            GameUpdate.UISubscribe -= MoveUI;
         }
 
         _myRect.localPosition = RandomThings.Interpolate(_moveCurrTime, _currPos, _movePos);

@@ -21,6 +21,7 @@ public class WorldGridHandler : MonoBehaviour
     List<Tile> _playerStartTiles;
     List<GridToken> _charactersOnField;
     List<Tile> _currTileMoves;
+    List<DamageText> _damageOnScreen;
     GridToken _currMoveToken;
 
     float _xpadding = 1f;
@@ -36,6 +37,8 @@ public class WorldGridHandler : MonoBehaviour
 
     int _holesInTheFloor = 0;
     public int NumberOfHoles { get { return _holesInTheFloor; } }
+
+    bool _initialized = false;
     
     //Initialize
     //Loads in building blocks(planes, cubes) for generation
@@ -50,18 +53,28 @@ public class WorldGridHandler : MonoBehaviour
             _worldInstance = this;
         }
 
-        _tileOBJ = Resources.Load<GameObject>("GridObjects/Tile");
-        _wallblickOBJ = Resources.Load<GameObject>("GridObjects/Wallblock");
-        _enemyOBJ = Resources.Load<GameObject>("GridObjects/EnemyPrefab");
-        _warriorOBJ = Resources.Load<GameObject>("GridObjects/WarriorPrefab");
-        _damageTextOBJ = Resources.Load<GameObject>("GridObjects/DamageTextPrefab");
-        _charactersOnField = new List<GridToken>(); 
-        _myCamera = transform.GetChild(0).GetComponent<CameraFollow>();
-        _myCamera.GetComponent<AudioListener>().enabled = false;
-        _myCamera.transform.SetParent(null);
-        _myCamera.Init(gameObject);
-        _myCamera.FocusObject(gameObject, CameraModes.SHOWCASING);
-        _batRef = UIHolder.UIInstance.GetBattleUI;
+        if (!_initialized)
+        {
+            _tileOBJ = Resources.Load<GameObject>("GridObjects/Tile");
+            _wallblickOBJ = Resources.Load<GameObject>("GridObjects/Wallblock");
+            _enemyOBJ = Resources.Load<GameObject>("GridObjects/EnemyPrefab");
+            _warriorOBJ = Resources.Load<GameObject>("GridObjects/WarriorPrefab");
+            _damageTextOBJ = Resources.Load<GameObject>("GridObjects/DamageTextPrefab");
+            _charactersOnField = new List<GridToken>();
+            _myCamera = transform.GetChild(0).GetComponent<CameraFollow>();
+            _myCamera.GetComponent<AudioListener>().enabled = false;
+            _myCamera.transform.SetParent(null);
+            _myCamera.Init(gameObject);
+            _batRef = UIHolder.UIInstance.GetBattleUI;
+            _initialized = true;
+        }
+        else
+        {
+            _myCamera.Init(gameObject);
+        }
+
+        _damageOnScreen = new List<DamageText>();
+        _myCamera.FocusPosition(gameObject, CameraModes.SHOWCASING);
     }
 
     //Uses GridHandler data
@@ -83,7 +96,7 @@ public class WorldGridHandler : MonoBehaviour
         {
             for (int x = 0; x < _gridTiles.GetLength(0); x++)
             {
-                _gridTiles[x, y] = GenerateTile(_tileOBJ, (x * _xpadding) - ((_gridTiles.GetLength(0) / 2) * _xpadding), terrainData[x, y].GetTerrainHeight, (y * _zpadding) - ((_gridTiles.GetLength(0) / 2) * _xpadding));
+                _gridTiles[x, y] = GenerateTile(_tileOBJ, (x * _xpadding) - ((_gridTiles.GetLength(0) / 2) * _xpadding) + (_xpadding/2), terrainData[x, y].GetTerrainHeight, (y * _zpadding) - ((_gridTiles.GetLength(0) / 2) * _zpadding) + (_zpadding / 2));
                 _gridTiles[x, y].Init(terrainData[x, y].GetTerrainColor, x, y);
                 if (terrainData[x, y].GetTerrainType == 'O')
                 {
@@ -169,32 +182,7 @@ public class WorldGridHandler : MonoBehaviour
         }
     }
 
-    //Deletes the board so a new one can be built
-    //deletes all building blocks and empties all Lists
-    void DeleteBoard()
-    {
-        for (int y = 0; y < _gridTiles.GetLength(1); y++)
-        {
-            for (int x = 0; x < _gridTiles.GetLength(0); x++)
-            {
-                GameObject objDeletion = _gridTiles[x, y].gameObject;
-                _gridTiles[x, y] = null;
-                Destroy(objDeletion);
-            }
-        }
-
-        for (int i = 0; i < _stackablefloor.Count; i = 0)
-        {
-            GameObject currentfloorpiece = _stackablefloor[i];
-            _stackablefloor.Remove(currentfloorpiece);
-            Destroy(currentfloorpiece);
-        }
-
-        if (_charactersOnField.Count > 0)
-        {
-            DeleteCharacters();
-        }
-    }
+    
 
     //------------------CHARACTER SPAWNING---------------//
 
@@ -211,6 +199,8 @@ public class WorldGridHandler : MonoBehaviour
         _charactersOnField.Add(tokenref);
     }
 
+    //spawns in player characters
+    //spawns as Gridtokens
     public void SpawnPlayer(Character newPlayer)
     {
         GameObject newSpawn;
@@ -233,16 +223,7 @@ public class WorldGridHandler : MonoBehaviour
         _charactersOnField.Add(tokenref);
     }
 
-    //takes a single character off of the board
-    void DeleteCharacters()
-    {
-        for (int i = 0; i < _charactersOnField.Count; i = 0)
-        {
-            GridToken currentToken = _charactersOnField[i];
-            _charactersOnField.Remove(currentToken);
-            Destroy(currentToken.gameObject);
-        }
-    }
+    
 
     //------------------BOARD INTERACTIONS---------------//
 
@@ -270,27 +251,31 @@ public class WorldGridHandler : MonoBehaviour
         Debug.Log("World Grid: \n" + board);
     }
 
+    //takes in a position in the grid and returns a gridtoken
     public GridToken GetGridToken(Vector2 pos)
     {
         return _gridTiles[(int)pos.x, (int)pos.y].PersonOnMe;
     }
 
+    //take in a position in the Grid and return one of the tiles in the scene
     public Tile GetTile(Vector2 pos)
     {
         return _gridTiles[(int)pos.x, (int)pos.y];
     }
 
+    //spawn a single UI onto the Canvas to reflect damage
     public void SpawnDamageUI(Vector2 attackpos, string damage)
     {
         Tile spawn = _gridTiles[(int)attackpos.x, (int)attackpos.y];
         Vector3 spawnpos = _batRef.BattleCamera.WorldToScreenPoint(spawn.transform.position);
         GameObject newDamOBJ = Instantiate<GameObject>(_damageTextOBJ, spawnpos, _damageTextOBJ.transform.rotation, _batRef.transform);
         newDamOBJ.GetComponent<Text>().text = damage;
-        newDamOBJ.GetComponent<DamageText>().Init();
+        newDamOBJ.GetComponent<DamageText>().Init(spawn.transform.position);
         ResetPanels();
         _batRef.CharacterDoneAttacking();
     }
     
+    //highlight tiles colors to reflect what player is trying to target
     public void LightUpBoard(List<Vector2> panelsToLightUp, Color col)
     {
         for (int i = 0; i < panelsToLightUp.Count; i++)
@@ -302,6 +287,9 @@ public class WorldGridHandler : MonoBehaviour
         }
     }
 
+    //takes in a list of positions
+    //finds tiles int the same postions and adds those to a list 
+    //this list is used to go through positions to move Gridtokens one position at a time
     public void StartCharacterMove(List<Vector2> movePositions)
     {
 
@@ -326,9 +314,11 @@ public class WorldGridHandler : MonoBehaviour
         //Debug.Log("before move, " + _currTileMoves.Count);
         _startTime = Time.time;
         //DebugBoard();
-        GameUpdate.Subscribe += MoveGridToken;
+        GameUpdate.ObjectSubscribe += MoveGridToken;
     }
 
+    //method that moves a single gridtoken around the scene
+    //moves characters one tile at a time, going through a list of positions 
     public void MoveGridToken()
     {
         _currTime = (Time.time - _startTime) / _moveSpeed;
@@ -346,7 +336,7 @@ public class WorldGridHandler : MonoBehaviour
             //Debug.Log("after move, " + _currTileMoves.Count);
             if (_currTileMoves.Count <= 1)
             {
-                GameUpdate.Subscribe -= MoveGridToken;
+                GameUpdate.ObjectSubscribe -= MoveGridToken;
                 Debug.Log("ending movement");
                 _batRef.CharacterDoneMoving(_currTileMoves[0].PersonOnMe);
                 return;
@@ -364,16 +354,59 @@ public class WorldGridHandler : MonoBehaviour
         }
     }
 
+    //a single gridtoken and its gameobject from the scene
     public void RemoveGridPiece(Vector2 posToRemove)
     {
         if(_gridTiles[(int)posToRemove.x, (int)posToRemove.y].PersonOnMe != null)
         {
             GameObject piece = _gridTiles[(int)posToRemove.x, (int)posToRemove.y].PersonOnMe.gameObject;
+            _charactersOnField.Remove(_gridTiles[(int)posToRemove.x, (int)posToRemove.y].PersonOnMe);
             _gridTiles[(int)posToRemove.x, (int)posToRemove.y].PersonOnMe = null;
             Destroy(piece);
         }
     }
+    
+    //takes and deletes all gridtokens off of the board
+    void DeleteCharacters()
+    {
+        for (int i = 0; i < _charactersOnField.Count; i = 0)
+        {
+            GridToken currentToken = _charactersOnField[i];
+            Destroy(currentToken.gameObject);
+            _charactersOnField.RemoveAt(0);
+        }
 
+        _charactersOnField = new List<GridToken>();
+    }
+    
+    //Deletes the board so a new one can be built
+    //deletes all building blocks and empties all Lists
+    void DeleteBoard()
+    {
+        for (int y = 0; y < _gridTiles.GetLength(1); y++)
+        {
+            for (int x = 0; x < _gridTiles.GetLength(0); x++)
+            {
+                GameObject objDeletion = _gridTiles[x, y].gameObject;
+                _gridTiles[x, y] = null;
+                Destroy(objDeletion);
+            }
+        }
+
+        for (int i = 0; i < _stackablefloor.Count; i = 0)
+        {
+            GameObject currentfloorpiece = _stackablefloor[i];
+            _stackablefloor.Remove(currentfloorpiece);
+            Destroy(currentfloorpiece);
+        }
+
+        if (_charactersOnField.Count > 0)
+        {
+            DeleteCharacters();
+        }
+    }
+
+    //resets all panels to their base colors
     public void ResetPanels()
     {
         for (int x = 0; x < _gridTiles.GetLength(0); x++)
@@ -383,11 +416,5 @@ public class WorldGridHandler : MonoBehaviour
                 _gridTiles[x, y].ResetColor();
             }
         }
-    }
-
-    //------------------MISC-----------------//
-    public void CharacterForceEnd()
-    {
-        _batRef.EndCurrentTurn();
     }
 }

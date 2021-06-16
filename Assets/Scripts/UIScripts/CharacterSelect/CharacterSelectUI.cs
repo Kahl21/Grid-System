@@ -17,16 +17,20 @@ public class CharacterSelectUI : MonoBehaviour, IPointerClickHandler
 
     UIHolder _uiRef;
 
-    public void Init(UIHolder reference)
+    bool _initalized = false;
+
+    public void Init()
     {
-        _uiRef = reference;
-        SetUI();
+        if (!_initalized)
+        {
+            _uiRef = UIHolder.UIInstance;
+            SetUI();
+            _initalized = true;
+        }
+
+        GameUpdate.PlayerSubscribe += TryMoveSelectedUI;
     }
 
-    private void Update()
-    {
-        TryMoveSelectedUI();
-    }
 
     void SetUI()
     {
@@ -58,6 +62,7 @@ public class CharacterSelectUI : MonoBehaviour, IPointerClickHandler
         if(_playerTeamInfo.GetPlayerTeam.Count > 0)
         {
             _uiRef.CharacterSelectDone(_playerTeamInfo.GetPlayerTeam);
+            GameUpdate.PlayerSubscribe -= TryMoveSelectedUI;
         }
     }
 

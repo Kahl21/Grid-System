@@ -10,10 +10,10 @@ public class TeamSetUp : MonoBehaviour, IPointerClickHandler
     List<DraggableCharacter> _playerTeam;
     public List<DraggableCharacter> GetPlayerTeam { get { return _playerTeam; } }
 
-    int _xSpacing = 30;
-    int _ySpacing = 30;
-    int _ydisplacement;
-    int _charactersPerLine = 3;
+    //int _xSpacing = 30;
+    //int _ySpacing = 30;
+    //int _ydisplacement;
+    //int _charactersPerLine = 3;
     int _totalUnitsAllowed = 8;
 
     RectTransform _myRect;

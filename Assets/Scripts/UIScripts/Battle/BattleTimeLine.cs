@@ -28,20 +28,21 @@ public class BattleTimeLine : MonoBehaviour
         _characterImages = new List<Image>();
 
         //Debug.Log("populate called");
-        GameObject spawnObj = new GameObject();
-        spawnObj.AddComponent<RectTransform>();
-        spawnObj.AddComponent<Image>();
-        Rect rectref = spawnObj.GetComponent<RectTransform>().rect;
-        rectref.width = _imageSize;
-        rectref.height = _imageSize;
+        
 
         for (int i = 0; i < _characterOrderList.Count; i++)
         {
-            GameObject newObj = Instantiate(spawnObj, transform);
-            newObj.GetComponent<Image>().sprite = _characterOrderList[i].GetSprite;
-            _characterImages.Add(newObj.GetComponent<Image>());
+            GameObject spawnObj = new GameObject();
+            spawnObj.AddComponent<RectTransform>();
+            spawnObj.AddComponent<Image>();
+            spawnObj.transform.SetParent(transform);
+            spawnObj.GetComponent<Image>().sprite = _characterOrderList[i].GetSprite;
+            Rect rectref = spawnObj.GetComponent<RectTransform>().rect;
+            rectref.width = _imageSize;
+            rectref.height = _imageSize;
+            spawnObj.transform.localScale = Vector3.one;
+            _characterImages.Add(spawnObj.GetComponent<Image>());
         }
-
         AlignTimeline();
     }
 
@@ -71,34 +72,47 @@ public class BattleTimeLine : MonoBehaviour
     public void ContinueFight()
     {
         Debug.Log(_characterOrderList[0].ClassName + " going");
-        _characterOrderList[0].StartTurn();
+        _battleRef.CheckNextTurn(_characterOrderList[0]);
     }
 
     public void EndOfTurn()
     {
-        Image ImTemp = _characterImages[0];
-        _characterImages.RemoveAt(0);
-        _characterImages.Add(ImTemp);
+        if(_characterImages.Count != 0 && _characterOrderList.Count != 0)
+        {
+            Image ImTemp = _characterImages[0];
+            _characterImages.RemoveAt(0);
+            _characterImages.Add(ImTemp);
+
+            Character CharaTemp = _characterOrderList[0];
+            _characterOrderList.RemoveAt(0);
+            _characterOrderList.Add(CharaTemp);
+
+            AlignTimeline();
+
+            //next turn call here
+            ContinueFight();
+        }
+        else
+        {
+            Debug.Log("no need to end turn probably because battle is over");
+            return;
+        }
         
-        Character CharaTemp = _characterOrderList[0];
-        _characterOrderList.RemoveAt(0);
-        _characterOrderList.Add(CharaTemp);
-
-        AlignTimeline();
-
-        //next turn call here
     }
 
-    public void RemovePlayerFromTimeline(Character deadchara)
+    public void RemovecharacterFromTimeline(Character deadchara)
     {
-        _characterImages.RemoveAt(_characterOrderList.IndexOf(deadchara));
-        _characterOrderList.Remove(deadchara);
+        int deadSpot = _characterOrderList.IndexOf(deadchara);
+
+        GameObject portraitToDestroy = _characterImages[deadSpot].gameObject;
+        _characterImages.RemoveAt(deadSpot);
+        Destroy(portraitToDestroy);
         AlignTimeline();
     }
 
     public void ResetTimeline()
     {
-        _characterOrderList.Clear();
+        //_characterOrderList.Clear();
         for (int i = 0; i < _characterImages.Count; i++)
         {
             Destroy(_characterImages[i].gameObject);

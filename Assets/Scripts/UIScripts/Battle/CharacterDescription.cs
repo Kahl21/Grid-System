@@ -12,7 +12,9 @@ public class CharacterDescription: MonoBehaviour, IMoveable, IFadeable
     Image _detPort;
     Text _detCharInfo;
     Vector3 _detailStartPos, _detailEndPos, _movePos;
+
     float _currTime, _startTime;
+    [SerializeField]
     float _speedDelta = .5f;
     float _fadeCurrTime;
     bool _hidden;
@@ -40,13 +42,13 @@ public class CharacterDescription: MonoBehaviour, IMoveable, IFadeable
     {
         PlugInfo(charInfo);
         CalculateMove();
-        GameUpdate.Subscribe += FadeInUI;
+        GameUpdate.UISubscribe += FadeInUI;
     }
 
     public void HideUI()
     {
         CalculateMove();
-        GameUpdate.Subscribe += FadeOutUI;
+        GameUpdate.UISubscribe += FadeOutUI;
     }
 
     void PlugInfo(Character info)
@@ -101,7 +103,7 @@ public class CharacterDescription: MonoBehaviour, IMoveable, IFadeable
     {
         //turn on the UI and move it into position
         _startTime = Time.time;
-        GameUpdate.Subscribe += MoveUI;
+        GameUpdate.UISubscribe += MoveUI;
     }
 
     public void MoveUI()
@@ -112,7 +114,7 @@ public class CharacterDescription: MonoBehaviour, IMoveable, IFadeable
         {
             _currTime = 1;
             //Debug.Log("details on");
-            GameUpdate.Subscribe -= MoveUI;
+            GameUpdate.UISubscribe -= MoveUI;
         }
 
 
@@ -131,7 +133,7 @@ public class CharacterDescription: MonoBehaviour, IMoveable, IFadeable
             _mainPanel.blocksRaycasts = true;
             _hidden = false;
             _uiRef.GetInteractionState = UIInteractions.ZOOMED;
-            GameUpdate.Subscribe -= FadeInUI;
+            GameUpdate.UISubscribe -= FadeInUI;
         }
 
         _mainPanel.alpha = RandomThings.Interpolate(_fadeCurrTime, _mainPanel.alpha, 1);
@@ -146,7 +148,7 @@ public class CharacterDescription: MonoBehaviour, IMoveable, IFadeable
             _mainPanel.blocksRaycasts = false;
             _hidden = true;
             _uiRef.GetInteractionState = UIInteractions.FREE;
-            GameUpdate.Subscribe -= FadeOutUI;
+            GameUpdate.UISubscribe -= FadeOutUI;
         }
 
         _mainPanel.alpha = RandomThings.Interpolate(_fadeCurrTime, _mainPanel.alpha, 0);

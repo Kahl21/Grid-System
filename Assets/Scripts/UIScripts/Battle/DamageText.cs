@@ -10,17 +10,19 @@ public class DamageText : MonoBehaviour
 
     float _currTime, _startTime;
     float _fadespeed = 1f;
-    float _movespeed = .5f;
-    
+    float _movespeed = 50f;
 
-    public void Init()
+    Vector3 _objectWorldPos;
+
+    public void Init(Vector3 objectworldpos)
     {
         _myRect = GetComponent<RectTransform>();
         _group = GetComponent<CanvasGroup>();
         _group.alpha = 1;
 
+        _objectWorldPos = objectworldpos;
         _startTime = Time.time;
-        GameUpdate.Subscribe += MoveUp;
+        GameUpdate.UISubscribe += MoveUp;
     }
 
     void MoveUp()
@@ -29,12 +31,18 @@ public class DamageText : MonoBehaviour
         
         _group.alpha = RandomThings.Interpolate(_currTime, 1, 0);
 
-        _myRect.position += (Vector3.up * _movespeed);
+        Vector3 movepos = UIHolder.UIInstance.GetBattleUI.BattleCamera.WorldToScreenPoint(_objectWorldPos);
 
-        if (_group.alpha == 0)
+
+        movepos += (Vector3.up * _movespeed) * _currTime;
+
+        _myRect.position = movepos;
+
+        if (_currTime >= 1)
         {
-            GameUpdate.Subscribe -= MoveUp;
-            Destroy(gameObject);
+            GameUpdate.UISubscribe -= MoveUp;
+            Destroy(this.gameObject);
+            Debug.Log("text destroyed");
         }
     }
 }

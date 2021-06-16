@@ -87,6 +87,7 @@
     <Compile Include="Assets\Scripts\TerrainScripts\World\Tile.cs" />
     <Compile Include="Assets\Scripts\TerrainScripts\World\WorldGridHandler.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\AbilityOptions.cs" />
+    <Compile Include="Assets\Scripts\UIScripts\Battle\BattleEnding.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\BattleTimeLine.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\BattleUI.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\CharacterDescription.cs" />

@@ -19,6 +19,7 @@ public class AbilityOptions : MonoBehaviour, IFadeable
     List<Ability> _currAbilities;
     List<Button> _currButtons;
 
+    [SerializeField]
     float _moveFadeSpeed = .3f;
     float _startTime;
     float _fadeCurrTime;
@@ -27,6 +28,7 @@ public class AbilityOptions : MonoBehaviour, IFadeable
     public bool IsHidden { get { return _hidden; } }
     public bool IsMoving { get { return _moving; } }
 
+    //Initialize Ability Options
     public void Init(BattleUI bat, CharacterOptions opt)
     {
         _battleRef = bat;
@@ -36,6 +38,8 @@ public class AbilityOptions : MonoBehaviour, IFadeable
         SetUI();
     }
 
+    //Adds references of all child objects or loadables
+    //sets this Ui piece to its base state
     void SetUI()
     {
         _abilityMenu = GetComponent<CanvasGroup>();
@@ -53,7 +57,10 @@ public class AbilityOptions : MonoBehaviour, IFadeable
         _currAbilities = new List<Ability>();
         _currButtons = new List<Button>();
     }
-
+    
+    //looks at all skills that selected character has
+    //creates buttons for however many skills there are
+    //binds function calls of appropriate skills to generated buttons
     public void SetSkills(Character charRef)
     {
         if(_currAbilities.Count > 0)
@@ -84,67 +91,79 @@ public class AbilityOptions : MonoBehaviour, IFadeable
         }
     }
 
+    //sends info of whatever skill button is clicked on to BattleUI
+    //then hides itself, to clear screen, so BattleUI can highlight tiles on screen
     public void ShowSelectedSkill(Ability ab)
     {
         _battleRef.AbilitySelected(ab);
         HideUI();
     }
 
+    //adds "fading" interface functions to GameUpdate to fade out UI
     public void HideUI()
     {
         _optionsRef.HideAbilities();
         _startTime = Time.time;
-        GameUpdate.Subscribe += FadeOutUI;
+        GameUpdate.UISubscribe += FadeOutUI;
     }
 
+    //adds "fading" interface functions to GameUpdate to fade out UI
     public void BringUpAbilities()
     {
         WorldGridHandler.WorldInstance.ResetPanels();
         //Debug.Log(_currAbilities.Count);
         _startTime = Time.time;
-        GameUpdate.Subscribe += FadeInUI;
+        GameUpdate.UISubscribe += FadeInUI;
     }
 
+    //calling this hides AbilityOptions UI
+    //Then brings the CharacterOptions UI back up
     public void PreviousMenu()
     {
         _optionsRef.ShowUI();
         _startTime = Time.time;
-        GameUpdate.Subscribe += FadeOutUI;
+        GameUpdate.UISubscribe += FadeOutUI;
     }
 
+    //IFadeable Interface
+    //Fades in UI to full alpha
     public void FadeInUI()
     {
         _fadeCurrTime = (Time.time - _startTime) / _moveFadeSpeed;
-        if (_fadeCurrTime > 1)
+        if (_fadeCurrTime >= 1)
         {
             _abilityMenu.alpha = 1;
             _abilityMenu.blocksRaycasts = true;
             _hidden = false;
             _moving = false;
-            GameUpdate.Subscribe -= FadeInUI;
+            GameUpdate.UISubscribe -= FadeInUI;
         }
 
         _abilityMenu.alpha = RandomThings.Interpolate(_fadeCurrTime, _abilityMenu.alpha, 1);
     }
 
+    //IFadeable Interface
+    //Fades out UI to no alpha
     public void FadeOutUI()
     {
         _fadeCurrTime = (Time.time - _startTime) / _moveFadeSpeed;
-        if (_fadeCurrTime > 1)
+        if (_fadeCurrTime >= 1)
         {
             _abilityMenu.alpha = 0;
             _abilityMenu.blocksRaycasts = false;
             _descHolder.alpha = 0;
             _hidden = true;
             _moving = false;
-            GameUpdate.Subscribe -= FadeOutUI;
+            GameUpdate.UISubscribe -= FadeOutUI;
         }
 
         _abilityMenu.alpha = RandomThings.Interpolate(_fadeCurrTime, _abilityMenu.alpha, 0);
         _descHolder.alpha = RandomThings.Interpolate(_fadeCurrTime, _descHolder.alpha, 0);
     }
 
-    void ResetAbilityButtons()
+    //destroys all current buttons for abilities
+    //resets all lists to empty for next set of abilities to come in
+     public void ResetAbilityButtons()
     {
         for (int i = 0; i < _currAbilities.Count; i++)
         {
@@ -155,13 +174,15 @@ public class AbilityOptions : MonoBehaviour, IFadeable
         _currAbilities = new List<Ability>();
     }
 
+    //resets ability options (from whatever state its in)
+    //makes itself hidden and unclickable
     public void ResetFading()
     {
         if (!_moving)
         {
             _moving = true;
             _startTime = Time.time;
-            GameUpdate.Subscribe += FadeOutUI;
+            GameUpdate.UISubscribe += FadeOutUI;
         }
     }
 }

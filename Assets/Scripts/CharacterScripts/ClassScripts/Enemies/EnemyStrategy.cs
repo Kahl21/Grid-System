@@ -5,43 +5,54 @@ using UnityEngine.Events;
 
 public class EnemyStrategy : Strategy
 {
+    protected enum EnemyActions
+    {
+        NONE,
+        MOVE,
+        ATTACK,
+        ABILITY,
+        TARGETABILITY,
+        HEAL,
+        TARGETHEAL
+    }
 
     protected Character _currTarget;
     protected BattleStrats _myStrat;
+    protected List<EnemyActions> _orderedActions;
 
-    protected List<UnityAction> _OrderOfActions;
     protected int _currentAction;
 
     protected float _startTime;
-    protected float _waitTime = 1f;
+    protected float _waitTime = .2f;
     protected float _currTime;
 
     public EnemyStrategy() : base()
     {
         _currTarget = null;
-        _OrderOfActions = new List<UnityAction>();
+        _orderedActions = new List<EnemyActions>();
+
 
         switch (_myStrat)
         {
             case BattleStrats.BLOODTHIRSTY:
-                _OrderOfActions.Add(() => TryMove()); 
-                _OrderOfActions.Add(() => TryAttack()); 
-                _OrderOfActions.Add(() => TryAbilites(_currTarget));
-                _OrderOfActions.Add(() => TryAbilites());
+                _orderedActions.Add(EnemyActions.MOVE);
+                _orderedActions.Add(EnemyActions.ATTACK);
+                _orderedActions.Add(EnemyActions.TARGETABILITY);
+                _orderedActions.Add(EnemyActions.ABILITY);
                 break;
             case BattleStrats.CAUTIOUS:
-                _OrderOfActions.Add(() => TryHeal());
-                _OrderOfActions.Add(() => TryAbilites());
-                _OrderOfActions.Add(() => TryAbilites(_currTarget));
-                _OrderOfActions.Add(() => TryMove());
-                _OrderOfActions.Add(() => TryAttack());
+                _orderedActions.Add(EnemyActions.HEAL);
+                _orderedActions.Add(EnemyActions.ABILITY);
+                _orderedActions.Add(EnemyActions.TARGETABILITY);
+                _orderedActions.Add(EnemyActions.MOVE);
+                _orderedActions.Add(EnemyActions.ATTACK);
                 break;
             case BattleStrats.RANGED:
-                _OrderOfActions.Add(() => TryAbilites(_currTarget));
-                _OrderOfActions.Add(() => TryAbilites());
-                _OrderOfActions.Add(() => TryMove());
-                _OrderOfActions.Add(() => TryHeal());
-                _OrderOfActions.Add(() => TryAttack());
+                _orderedActions.Add(EnemyActions.TARGETABILITY); 
+                _orderedActions.Add(EnemyActions.ABILITY); 
+                _orderedActions.Add(EnemyActions.MOVE); 
+                _orderedActions.Add(EnemyActions.HEAL); 
+                _orderedActions.Add(EnemyActions.ATTACK);
                 break;
             default:
                 break;
@@ -50,30 +61,31 @@ public class EnemyStrategy : Strategy
 
     public EnemyStrategy(Character characterToControl) : base(characterToControl)
     {
-        _currTarget = null; 
-        _OrderOfActions = new List<UnityAction>();
+        _currTarget = null;
+        _orderedActions = new List<EnemyActions>();
+
 
         switch (_myStrat)
         {
             case BattleStrats.BLOODTHIRSTY:
-                _OrderOfActions.Add(() => TryMove());
-                _OrderOfActions.Add(() => TryAttack());
-                _OrderOfActions.Add(() => TryAbilites(_currTarget));
-                _OrderOfActions.Add(() => TryAbilites());
+                _orderedActions.Add(EnemyActions.MOVE);
+                _orderedActions.Add(EnemyActions.ATTACK);
+                _orderedActions.Add(EnemyActions.TARGETABILITY);
+                _orderedActions.Add(EnemyActions.ABILITY);
                 break;
             case BattleStrats.CAUTIOUS:
-                _OrderOfActions.Add(() => TryHeal());
-                _OrderOfActions.Add(() => TryAbilites());
-                _OrderOfActions.Add(() => TryAbilites(_currTarget));
-                _OrderOfActions.Add(() => TryMove());
-                _OrderOfActions.Add(() => TryAttack());
+                _orderedActions.Add(EnemyActions.HEAL);
+                _orderedActions.Add(EnemyActions.ABILITY);
+                _orderedActions.Add(EnemyActions.TARGETABILITY);
+                _orderedActions.Add(EnemyActions.MOVE);
+                _orderedActions.Add(EnemyActions.ATTACK);
                 break;
             case BattleStrats.RANGED:
-                _OrderOfActions.Add(() => TryAbilites(_currTarget));
-                _OrderOfActions.Add(() => TryAbilites());
-                _OrderOfActions.Add(() => TryMove());
-                _OrderOfActions.Add(() => TryHeal());
-                _OrderOfActions.Add(() => TryAttack());
+                _orderedActions.Add(EnemyActions.TARGETABILITY);
+                _orderedActions.Add(EnemyActions.ABILITY);
+                _orderedActions.Add(EnemyActions.MOVE);
+                _orderedActions.Add(EnemyActions.HEAL);
+                _orderedActions.Add(EnemyActions.ATTACK);
                 break;
             default:
                 break;
@@ -103,16 +115,39 @@ public class EnemyStrategy : Strategy
     public override void ContinueTurn()
     {
         Debug.Log("continue Turn");
-        if (_currentAction < _OrderOfActions.Count)
+        if (_currentAction < _orderedActions.Count)
         {
             Debug.Log("acting");
             _currentAction++;
-            _OrderOfActions[_currentAction-1]();
+            switch (_orderedActions[_currentAction-1])
+            {
+                case EnemyActions.NONE:
+                    break;
+                case EnemyActions.MOVE:
+                    TryMove();
+                    break;
+                case EnemyActions.ATTACK:
+                    TryAttack();
+                    break;
+                case EnemyActions.ABILITY:
+                    TryAbilites();
+                    break;
+                case EnemyActions.TARGETABILITY:
+                    TryAbilites(_currTarget);
+                    break;
+                case EnemyActions.HEAL:
+                    TryHeal();
+                    break;
+                case EnemyActions.TARGETHEAL:
+                    break;
+                default:
+                    break;
+            }
         }
         else
         {
             Debug.Log("Forcing End");
-            FightHandler.ForceEndTurn();
+            UIHolder.UIInstance.GetBattleUI.EndCurrentTurn();
         }
     }
 
@@ -137,8 +172,8 @@ public class EnemyStrategy : Strategy
             if (GridHandler.CheckForEnemyWithinRange(_me.CurrentPosition, _me.HeldWeapon, _me.Team, _currTarget))
             {
                 Debug.Log("trying to attack target");
-                _me.Attack(_currTarget);
                 _hasAttacked = true;
+                _me.Attack(_currTarget);
             }
             else
             {
@@ -167,8 +202,9 @@ public class EnemyStrategy : Strategy
 
             if (spellsICanUse.Count > 0 && spellsICanUse[rand].Cost <= _me.CurrMana)
             {
-                _me.UseSkill(spellsICanUse[rand]);
+                Debug.Log(spellsICanUse[rand].Name + " is trying to be used");
                 _hasAttacked = true;
+                _me.UseSkill(spellsICanUse[rand]);
             }
             else
             {
@@ -197,8 +233,8 @@ public class EnemyStrategy : Strategy
             if (spellsICanUse.Count > 0 && spellsICanUse[rand].Cost <= _me.CurrMana)
             {
                 Debug.Log(spellsICanUse[rand].Name + " is trying to be used");
-                _me.UseSkill(spellsICanUse[rand], target);
                 _hasAttacked = true;
+                _me.UseSkill(spellsICanUse[rand], target);
             }
             else
             {
@@ -226,8 +262,8 @@ public class EnemyStrategy : Strategy
 
             if (spellsICanUse.Count > 0 && spellsICanUse[rand].Cost <= _me.CurrMana)
             {
-                _me.UseHeal(spellsICanUse[rand]);
                 _hasAttacked = true;
+                _me.UseHeal(spellsICanUse[rand]);
             }
             else
             {
@@ -254,8 +290,8 @@ public class EnemyStrategy : Strategy
 
             if (spellsICanUse.Count > 0 && spellsICanUse[rand].Cost <= _me.CurrMana)
             {
-                _me.UseHeal(spellsICanUse[rand], target);
                 _hasAttacked = true;
+                _me.UseHeal(spellsICanUse[rand], target);
             }
             else
             {
@@ -373,7 +409,7 @@ public class EnemyStrategy : Strategy
         Debug.Log("waiting called");
         _startTime = Time.time;
 
-        GameUpdate.Subscribe += WaitingTime;
+        GameUpdate.UISubscribe += WaitingTime;
     }
 
     public override void WaitingTime()
@@ -385,7 +421,7 @@ public class EnemyStrategy : Strategy
             Debug.Log("Waiting Done");
             _currTime = 1;
 
-            GameUpdate.Subscribe -= WaitingTime;
+            GameUpdate.UISubscribe -= WaitingTime;
             ContinueTurn();
         }
     }
