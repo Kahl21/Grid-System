@@ -21,7 +21,7 @@ public class Warrior : PlayerClass
 
         _myWeapon = new Axe();
 
-        _myAbilites.Add(new DoubleSlash());
+        _myAbilites.Add(new HardStrike());
 
         _mySpeed = Random.Range(5, 50);
         _myMovement = 2;

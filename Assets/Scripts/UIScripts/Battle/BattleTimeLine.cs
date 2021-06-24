@@ -13,15 +13,21 @@ public class BattleTimeLine : MonoBehaviour
     BattleUI _battleRef;
     RectTransform _currentCharacterBorder;
 
-    public void Init(BattleUI bref)
+    public void Init()
     {
         _characterOrderList = new List<Character>();
-        _characterOrderList = FightHandler.GetAllCharacters;
-        _battleRef = bref;
-        _currentCharacterBorder = this.transform.GetChild(0).GetComponent<RectTransform>();
-        
+        _characterOrderList = FightHandler.GetAllCharacters; 
         PopulateTimeline();
     }
+
+    public void Init(BattleUI bref)
+    {
+        _battleRef = bref;
+        _currentCharacterBorder = this.transform.GetChild(0).GetComponent<RectTransform>();
+
+        Init();
+    }
+    
 
     private void PopulateTimeline()
     {
@@ -29,7 +35,6 @@ public class BattleTimeLine : MonoBehaviour
 
         //Debug.Log("populate called");
         
-
         for (int i = 0; i < _characterOrderList.Count; i++)
         {
             GameObject spawnObj = new GameObject();
@@ -72,7 +77,7 @@ public class BattleTimeLine : MonoBehaviour
     public void ContinueFight()
     {
         Debug.Log(_characterOrderList[0].ClassName + " going");
-        _battleRef.CheckNextTurn(_characterOrderList[0]);
+        _battleRef.StartNextTurn(_characterOrderList[0]);
     }
 
     public void EndOfTurn()

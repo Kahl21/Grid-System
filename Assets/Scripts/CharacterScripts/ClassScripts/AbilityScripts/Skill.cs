@@ -29,11 +29,11 @@ public class Skill : Ability
 }
 
 // --------------NON-ELEMENTAL SKILLS---------//
-public class DoubleSlash : Skill
+public class HardStrike : Skill
 {
-    public DoubleSlash() : base()
+    public HardStrike() : base()
     {
-        _name = "Double Slash";
+        _name = "Hard Strike";
         _desc = "Slash the targeted enemy twice.";
         _mpCost = 20;
         _damage = 10;
@@ -47,8 +47,8 @@ public class DoubleSlash : Skill
         //HistoryHandler.AddToCurrentAction(activator.Name + " CASTS " + _name + "\n");
         for (int i = 0; i < targets.Count; i++)
         {
-            FightHandler.AttackEnemy(activator, targets[i]);
-            FightHandler.AttackEnemy(activator, targets[i]);
+            int totalDamage = activator.Offense.Strength + activator.HeldWeapon.StrengthMod + _damage; 
+            FightHandler.AbilityEnemy(totalDamage, _element, targets[i]);
         }
         activator.CurrMana -= _mpCost;
     }

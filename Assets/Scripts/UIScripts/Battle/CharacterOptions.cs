@@ -157,7 +157,7 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
         }
     }
 
-    public void ShowOnlyAbilites()
+    public void ShowAbilityPanel()
     {
         CalculateMove();
         _abilityPanel.BringUpAbilities();
@@ -249,6 +249,11 @@ public class CharacterOptions : MonoBehaviour, IFadeable, IMoveable
     {
         _currCharacter = null;
         _batRef.EndCurrentTurn();
+    }
+
+    public void GoStraightToAbilityMenu()
+    {
+        _movePos = _currPos + (Vector3.left * 300f);
     }
 
     public void ResetUIMovements()

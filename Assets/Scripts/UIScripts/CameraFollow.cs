@@ -155,11 +155,7 @@ public class CameraFollow : MonoBehaviour
     //checks if menus need to be hidden or not
     void CheckBattleState()
     {
-        if(_uiRef.GetInteractionState == UIInteractions.FREE)
-        {
-            _uiRef.HideActionsMenu();
-        }
-        else if(_uiRef.GetInteractionState == UIInteractions.MENUOPEN)
+        if(_uiRef.GetInteractionState == UIInteractions.MENUOPEN)
         {
             _uiRef.GetInteractionState = UIInteractions.FREE;
             _uiRef.HideActionsMenu();

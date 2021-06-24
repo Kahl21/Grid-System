@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.PackageManager;
 using UnityEngine;
 
 //enum for grid size
@@ -18,10 +17,10 @@ public enum GridSize
 public enum GridTraits
 {
     NONE,
-    FORESTS,
-    MARSH,
-    HOLES,
-    RANDOM
+    //FORESTS,
+    //MARSH,
+    //HOLES
+    //RANDOM
 }
 
 public enum Actions
@@ -101,61 +100,61 @@ public static class GridHandler
         float heightfloatvalue = UnityEngine.Random.Range(0f, maxheight);
         float height = (float)Math.Round(heightfloatvalue * 2f, MidpointRounding.AwayFromZero) / 2;
         //Debug.Log(height);
-        int forestChance, waterChance, holeChance;
+        //int forestChance, waterChance, holeChance;
         switch (terrain)
         {
             case GridTraits.NONE:
                 return new TerrainSpace(height);
-            case GridTraits.FORESTS:
-                forestChance = 75;
-                if (rand < forestChance)
-                {
-                    return new ForestSpace(height);
-                }
-                else
-                {
-                    return new TerrainSpace(height);
-                }
-            case GridTraits.MARSH:
-                waterChance = 50;
-                if (rand < waterChance)
-                {
-                    return new WaterSpace(height);
-                }
-                else
-                {
-                    return new TerrainSpace(height);
-                }
-            case GridTraits.HOLES:
-                holeChance = 30;
-                if (rand < holeChance)
-                {
-                    return new HoleSpace(height);
-                }
-                else
-                {
-                    return new TerrainSpace(height);
-                }
-            case GridTraits.RANDOM:
-                forestChance = 30;
-                waterChance = 20;
-                holeChance = 10;
-                if (rand < forestChance)
-                {
-                    return new ForestSpace(height);
-                }
-                else if(rand < forestChance + waterChance)
-                {
-                    return new WaterSpace(height);
-                }
-                else if(rand < forestChance + waterChance + holeChance)
-                {
-                    return new HoleSpace(height);
-                }
-                else
-                {
-                    return new TerrainSpace(height);
-                }
+            //case GridTraits.FORESTS:
+            //    forestChance = 75;
+            //    if (rand < forestChance)
+            //    {
+            //        return new ForestSpace(height);
+            //    }
+            //    else
+            //    {
+            //        return new TerrainSpace(height);
+            //    }
+            //case GridTraits.MARSH:
+            //    waterChance = 50;
+            //    if (rand < waterChance)
+            //    {
+            //        return new WaterSpace(height);
+            //    }
+            //    else
+            //    {
+            //        return new TerrainSpace(height);
+            //    }
+            //case GridTraits.HOLES:
+            //    holeChance = 30;
+            //    if (rand < holeChance)
+            //    {
+            //        return new HoleSpace(height);
+            //    }
+            //    else
+            //    {
+            //        return new TerrainSpace(height);
+            //    }
+            //case GridTraits.RANDOM:
+            //    forestChance = 30;
+            //    waterChance = 20;
+            //    holeChance = 10;
+            //    if (rand < forestChance)
+            //    {
+            //        return new ForestSpace(height);
+            //    }
+            //    else if(rand < forestChance + waterChance)
+            //    {
+            //        return new WaterSpace(height);
+            //    }
+            //    else if(rand < forestChance + waterChance + holeChance)
+            //    {
+            //        return new HoleSpace(height);
+            //    }
+            //    else
+            //    {
+            //        return new TerrainSpace(height);
+            //    }
             default:
                 return new TerrainSpace();
         }

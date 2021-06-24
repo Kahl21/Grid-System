@@ -43,6 +43,8 @@ public class BattleUI : MonoBehaviour
 
     //battle menu
     CharacterOptions _optionsRef;
+    PauseMenu _pauseRef;
+
     CameraFollow _battleCam;
     public Camera BattleCamera { get { return _battleCam.GetComponent<Camera>(); } }
 
@@ -65,6 +67,8 @@ public class BattleUI : MonoBehaviour
         }
         else
         {
+            _timeRef.Init();
+            _pauseRef.Init();
             _timeRef.ContinueFight();
         }
 
@@ -97,12 +101,15 @@ public class BattleUI : MonoBehaviour
         _endingHolder = transform.GetChild(5).GetComponent<BattleEnding>();
         _endingHolder.Init();
 
+        _pauseRef = transform.GetChild(6).GetComponent<PauseMenu>();
+        _pauseRef.Init();
+
         _initialized = true;
 
         _timeRef.ContinueFight();
     }
 
-    public void CheckNextTurn(Character currentchara)
+    public void StartNextTurn(Character currentchara)
     {
         _battleCam.FocusPosition(GridHandler.RetrieveToken(currentchara.CurrentPosition).gameObject, CameraModes.MOVING);
 
@@ -536,7 +543,7 @@ public class BattleUI : MonoBehaviour
                     case UIInteractions.ABILITYSELECT:
                         _battleCam.FocusPosition(GridHandler.RetrieveToken(_timeRef.GetCurrentTurnCharacter.CurrentPosition).gameObject, CameraModes.MOVING);
                         _interactState = UIInteractions.MENUOPEN;
-                        _optionsRef.ShowOnlyAbilites();
+                        _optionsRef.GoStraightToAbilityMenu();
                         break;
                     case UIInteractions.ABILITYUSE:
                         _battleCam.FocusPosition(GridHandler.RetrieveTile(_abilityTarget).gameObject, CameraModes.MOVING);
@@ -552,7 +559,7 @@ public class BattleUI : MonoBehaviour
     bool CancelButtonPressed()
     {
         //Debug.Log("Button canceling check");
-        if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.Backspace) || Input.GetMouseButtonDown(1))
+        if (Input.GetKeyDown(KeyCode.Backspace) || Input.GetMouseButtonDown(1))
         {
             //Debug.Log("back button pressed");
             return true;
@@ -648,12 +655,23 @@ public class BattleUI : MonoBehaviour
         _timeRef.EndOfTurn();
     }
 
-    public void EndBattle()
+    public void ResetBattleUI()
     {
-        Debug.Log("ending called");
+        _pauseRef.ResetPauseMenu();
         HideActionsMenu();
         _optionsRef.GetAbilityPanel.ResetAbilityButtons();
         _timeRef.ResetTimeline();
+    }
+    public void EndBattle()
+    {
+        Debug.Log("ending called");
+        ResetBattleUI();
         _endingHolder.StartEnding();
+    }
+
+    public void ForceEndBattle()
+    {
+        ResetBattleUI();
+        UIHolder.UIInstance.ResetToTeamSelect();
     }
 }

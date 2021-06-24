@@ -22,7 +22,7 @@ public static class SpellBook
     //adds them to the master list
     static void LoadSkills()
     {
-        _allSpells.Add(new DoubleSlash());
+        _allSpells.Add(new HardStrike());
         _allSpells.Add(new FlameStrike());
         _allSpells.Add(new IcyStrike());
         _allSpells.Add(new ThunderSlash());

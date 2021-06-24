@@ -93,6 +93,7 @@
     <Compile Include="Assets\Scripts\UIScripts\Battle\CharacterDescription.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\CharacterOptions.cs" />
     <Compile Include="Assets\Scripts\UIScripts\Battle\DamageText.cs" />
+    <Compile Include="Assets\Scripts\UIScripts\Battle\PauseMenu.cs" />
     <Compile Include="Assets\Scripts\UIScripts\CameraFollow.cs" />
     <Compile Include="Assets\Scripts\UIScripts\CharacterSelect\CharacterSelectUI.cs" />
     <Compile Include="Assets\Scripts\UIScripts\CharacterSelect\DraggableCharacter.cs" />

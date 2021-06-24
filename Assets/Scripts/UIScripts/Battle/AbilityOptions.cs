@@ -102,7 +102,7 @@ public class AbilityOptions : MonoBehaviour, IFadeable
     //adds "fading" interface functions to GameUpdate to fade out UI
     public void HideUI()
     {
-        _optionsRef.HideAbilities();
+        FullReset();
         _startTime = Time.time;
         GameUpdate.UISubscribe += FadeOutUI;
     }
@@ -184,5 +184,11 @@ public class AbilityOptions : MonoBehaviour, IFadeable
             _startTime = Time.time;
             GameUpdate.UISubscribe += FadeOutUI;
         }
+    }
+    
+    public void FullReset()
+    {
+        ResetFading();
+        _optionsRef.ResetPosition();
     }
 }

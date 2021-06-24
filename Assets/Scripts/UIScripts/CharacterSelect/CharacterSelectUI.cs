@@ -49,7 +49,7 @@ public class CharacterSelectUI : MonoBehaviour, IPointerClickHandler
 
         GameObject _characterSelectPrefab = Resources.Load<GameObject>("UI/CharacterInfo/CharacterUI");
 
-        for (int i = 0; i <= (int)PlayerClasses.MAGE; i++)
+        for (int i = 0; i <= (int)PlayerClasses.WARRIOR; i++)
         {
             GameObject newobject = Instantiate(_characterSelectPrefab, CharacterSelectBox.transform);
 
